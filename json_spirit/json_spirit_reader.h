@@ -3,7 +3,7 @@
 
 /* Copyright (c) 2007-2008 John W Wilkinson
 
-   json spirit version 2.05
+   json spirit version 2.06
 
    This source code can be used for any purpose as long as
    this comment is retained. */
@@ -17,8 +17,8 @@
 
 namespace json_spirit
 {
-    // converts text to a JSON value that will be either a JSON object or array
-    //
+    // functions to reads a JSON values
+
     bool read( const std::string&  s, Value&  value );
     bool read( std::istream&  is,     Value&  value );
 

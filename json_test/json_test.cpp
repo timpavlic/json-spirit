@@ -1,6 +1,6 @@
 /* Copyright (c) 2007-2008 John W Wilkinson
 
-   json spirit version 2.05
+   json spirit version 2.06
 
    This source code can be used for any purpose as long as
    this comment is retained. */

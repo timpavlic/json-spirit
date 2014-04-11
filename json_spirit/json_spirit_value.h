@@ -6,7 +6,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.05
+// json spirit version 2.06
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
@@ -14,6 +14,7 @@
 
 #include <boost/config.hpp> 
 #include <boost/cstdint.hpp> 
+#include <boost/shared_ptr.hpp> 
 #include <vector>
 #include <string>
 #include <cassert>
@@ -45,7 +46,11 @@ namespace json_spirit
         Value_impl( boost::int64_t value );
         Value_impl( double         value );
 
+        Value_impl( const Value_impl& other );
+
         bool operator==( const Value_impl& lhs ) const;
+
+        Value_impl& operator=( const Value_impl& lhs );
 
         Value_type type() const;
 
@@ -69,9 +74,12 @@ namespace json_spirit
 
         Value_type type_;
 
+        typedef boost::shared_ptr< Object > Object_ptr;
+        typedef boost::shared_ptr< Array > Array_ptr;
+
         String str_;
-        Object obj_;
-        Array array_;
+        Object_ptr obj_p_;
+        Array_ptr array_p_;
         bool bool_;
         boost::int64_t i_;
         double d_;
@@ -134,14 +142,14 @@ namespace json_spirit
     template< class String >
     Value_impl< String >::Value_impl( const Object& value )
     :   type_( obj_type )
-    ,   obj_( value )
+    ,   obj_p_( new Object( value ) )
     {
     }
 
     template< class String >
     Value_impl< String >::Value_impl( const Array& value )
     :   type_( array_type )
-    ,   array_( value )
+    ,   array_p_( new Array( value ) )
     {
     }
 
@@ -171,6 +179,39 @@ namespace json_spirit
     :   type_( real_type )
     ,   d_( value )
     {
+    }
+
+    template< class String >
+    Value_impl< String >::Value_impl( const Value_impl< String >& other )
+    :   type_( other.type() )
+    {
+        switch( type_ )
+        {
+            case str_type:   str_     = other.get_str();                               break;
+            case obj_type:   obj_p_   = Object_ptr( new Object( other.get_obj() ) );   break;
+            case array_type: array_p_ = Array_ptr ( new Array ( other.get_array() ) ); break;
+            case bool_type:  bool_    = other.get_bool();                              break;
+            case int_type:   i_       = other.get_int64();                             break;
+            case real_type:  d_       = other.get_real();                              break;
+            case null_type:                                                            break;
+            default: assert( false );
+        };
+    }
+
+    template< class String >
+    Value_impl< String >& Value_impl< String >::operator=( const Value_impl& lhs )
+    {
+        Value_impl tmp( lhs );
+
+        std::swap( type_, tmp.type_ );
+        std::swap( bool_, tmp.bool_ );
+        std::swap( i_,    tmp.i_ );
+        std::swap( d_,    tmp.d_ );
+        str_    .swap( tmp.str_ );
+        obj_p_  .swap( tmp.obj_p_ );
+        array_p_.swap( tmp.array_p_ );
+
+        return *this;
     }
 
     template< class String >
@@ -215,7 +256,7 @@ namespace json_spirit
     {
         assert( type() == obj_type );
 
-        return obj_;
+        return *obj_p_;
     }
      
     template< class String >
@@ -223,7 +264,7 @@ namespace json_spirit
     {
         assert( type() == array_type );
 
-        return array_;
+        return *array_p_;
     }
      
     template< class String >
@@ -263,7 +304,7 @@ namespace json_spirit
     {
         assert( type() == obj_type );
 
-        return obj_;
+        return *obj_p_;
     }
 
     template< class String >
@@ -271,7 +312,7 @@ namespace json_spirit
     {
         assert( type() == array_type );
 
-        return array_;
+        return *array_p_;
     }
 
     template< class String >

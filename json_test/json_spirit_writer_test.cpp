@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.05
+// json spirit version 2.06
 
 #include "json_spirit_writer_test.h"
 #include "json_spirit_writer.h"

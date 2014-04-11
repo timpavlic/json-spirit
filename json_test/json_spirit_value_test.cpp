@@ -3,14 +3,17 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.05
+// json spirit version 2.06
 
 #include "json_spirit_value_test.h"
 #include "json_spirit_value.h"
 #include "utils_test.h"
 
+#include <boost/assign/list_of.hpp>
+
 using namespace json_spirit;
 using namespace std;
+using namespace boost::assign;
 
 namespace
 {
@@ -133,6 +136,83 @@ namespace
 
         test_get_value( obj );
     }
+
+    void assert_array_eq( const Value& v, const Array& a )
+    {
+        assert_eq( v.get_array(), a );
+    }
+
+    void assert_obj_eq( const Value& v, const Object& obj )
+    {
+        assert_eq( v.get_obj(), obj );
+    }
+
+    template< typename T >
+    void check_copy( const T& t )
+    {
+        const Value v1( t );
+        const Value v2( v1 );
+        Value v3;
+        v3 = v1;
+    
+        assert_eq( v2.get_value< T >(), t );
+        assert_eq( v3.get_value< T >(), t );
+    }
+
+    void check_copying_null()
+    {
+        const Value v1;
+        const Value v2( v1 );
+        Value v3;
+        v3 = v1;
+    
+        assert_eq( v2.type(), null_type );
+        assert_eq( v3.type(), null_type );
+    }
+
+    void test_copying()
+    {
+        {
+            const Array array_1( list_of(1)(2) );
+
+            Value v1( array_1 );
+            const Value v2( v1 );
+
+            assert_array_eq( v1, array_1 );
+            assert_array_eq( v2, array_1 );
+
+            v1.get_array()[0] = 3;
+
+            assert_array_eq( v1, list_of(3)(2) );
+            assert_array_eq( v2, array_1 );
+        }
+        {
+            const Object obj_1( list_of( Pair( "a", 1 ) )( Pair( "b", 2 ) ) );
+
+            Value v1( obj_1 );
+            Value v2;
+            
+            v2 = v1;
+
+            assert_obj_eq( v1, obj_1 );
+            assert_obj_eq( v2, obj_1 );
+
+            v1.get_obj()[0] = Pair( "c", 3 );
+
+            assert_obj_eq( v1, list_of( Pair( "c", 3 ) )( Pair( "b", 2 ) ) );
+            assert_obj_eq( v2, obj_1 );
+        }
+        {
+            check_copy( 1 );
+            check_copy( 2.0 );
+            check_copy( string("test") );
+            check_copy( true );
+            check_copy( false );
+            check_copy( Array( list_of(1)(2) ) );
+            check_copy( Object( list_of( Pair( "a", 1 ) )( Pair( "b", 2 ) ) ) );
+            check_copying_null();
+        }
+    }
 }
 
 void json_spirit::test_value()
@@ -172,5 +252,5 @@ void json_spirit::test_value()
     test_real_value();
     test_null_value();
     test_get_value();
+    test_copying();
 }
-

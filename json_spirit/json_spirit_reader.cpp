@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.05
+// json spirit version 2.06
 
 #include "json_spirit_reader.h"
 #include "json_spirit_value.h"
@@ -191,7 +191,7 @@ namespace
 
             vector< Value_t* > stack_;   // previous child objects and arrays
 
-            String_t name_;               // of current name/value pair
+            String_t name_;              // of current name/value pair
         };
 
         // the spirit grammer 
@@ -210,7 +210,7 @@ namespace
             {
                 definition( const Json_grammer& self )
                 {
-                    // need to convert the semantic action class methods to functors with the 
+                    // first we convert the semantic action class methods to functors with the 
                     // parameter signature expected by spirit
 
                     typedef function< void( Char_t )         > Char_action;
@@ -229,6 +229,8 @@ namespace
                     Str_action  new_null   ( bind( &Semantic_actions::new_null,    &self.actions_, _1, _2 ) );
                     Real_action new_real   ( bind( &Semantic_actions::new_real,    &self.actions_, _1 ) );
                     Int_action  new_int    ( bind( &Semantic_actions::new_int,     &self.actions_, _1 ) );
+
+                    // actual grammer
 
                     json_
                         = value_ >> end_p

@@ -6,7 +6,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.05
+// json spirit version 2.06
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
@@ -17,9 +17,9 @@
 
 namespace json_spirit
 {
-    // converts a JSON object or array to text, 
+    // functions to convert JSON Values to text, 
     // the "formatted" versions add whitespace to format the output nicely
-    //
+
     void         write          ( const Value&   value, std::ostream&  os );
     void         write_formatted( const Value&   value, std::ostream&  os );
     std::string  write          ( const Value&   value );
