@@ -1,7 +1,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #include "json_spirit.h"
 #include <cassert>
@@ -92,7 +92,7 @@ vector< Address > read_addrs( const char* file_name )
 
     vector< Address > addrs;
 
-    for( unsigned int i = 0; i < addr_array.size(); ++i )
+    for( vector< Address >::size_type i = 0; i < addr_array.size(); ++i )
     {
         addrs.push_back( read_address( addr_array[i].get_obj() ) );
     }

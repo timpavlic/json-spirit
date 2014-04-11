@@ -1,7 +1,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #include "json_spirit.h"
 #include <cassert>
@@ -45,7 +45,7 @@ Address read_address( const Object& obj )
 {
     Address addr;
 
-    for( int i = 0; i != obj.size(); ++i )
+    for( Object::size_type i = 0; i != obj.size(); ++i )
     {
         const Pair& pair = obj[i];
 

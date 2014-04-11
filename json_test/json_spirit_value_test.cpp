@@ -1,7 +1,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #include "json_spirit_value_test.h"
 #include "json_spirit_value.h"
@@ -9,6 +9,7 @@
 #include <limits.h>
 
 #include <boost/assign/list_of.hpp>
+#include <boost/integer_traits.hpp>
 
 using namespace json_spirit;
 using namespace std;
@@ -17,6 +18,9 @@ using namespace boost::assign;
 
 namespace
 {
+    const int64_t max_int64   = integer_traits< int64_t  >::max();
+    const uint64_t max_uint64 = integer_traits< uint64_t >::max();
+
     void test_obj_value()
     {
         const Pair p1( "name1", "value1" );
@@ -80,39 +84,41 @@ namespace
         assert_eq ( v1, v2 );
         assert_neq( v1, v3 );
 
+        unsigned int uint_max = INT_MAX;
+        
         assert_eq( v1.get_int(),    1 );
         assert_eq( v1.get_int64(),  1 );
-        assert_eq( v1.get_uint64(), 1 );
+        assert_eq( v1.get_uint64(), 1u );
         assert_eq( v3.get_int(),    INT_MAX );
         assert_eq( v3.get_int64(),  INT_MAX );
-        assert_eq( v3.get_uint64(), INT_MAX );
+        assert_eq( v3.get_uint64(), uint_max );
 
-        Value v4( LLONG_MAX );
+        Value v4( max_int64 );
 
-        assert_eq( v4.get_int64(), LLONG_MAX );
-        assert_eq( v4.get_uint64(), static_cast< uint64_t >( LLONG_MAX ) );
+        assert_eq( v4.get_int64(), max_int64 );
+        assert_eq( v4.get_uint64(), static_cast< uint64_t >( max_int64 ) );
 
-        const uint64_t llong_max_plus_1 = LLONG_MAX + uint64_t( 1 );
+        const uint64_t max_int64_plus_1 = max_int64 + uint64_t( 1 );
 
-        Value v5( llong_max_plus_1 );
+        Value v5( max_int64_plus_1 );
 
-        assert_eq( v5.get_uint64(), llong_max_plus_1 );
+        assert_eq( v5.get_uint64(), max_int64_plus_1 );
 
-        Value v6( ULLONG_MAX );
+        Value v6( max_uint64 );
 
-        assert_eq( v6.get_uint64(), ULLONG_MAX );
+        assert_eq( v6.get_uint64(), max_uint64 );
 
         Value v7( 0 );
 
         assert_eq( v7.get_int(),    0 );
         assert_eq( v7.get_int64(),  0 );
-        assert_eq( v7.get_uint64(), 0 );
+        assert_eq( v7.get_uint64(), 0u );
 
         Value v8( -1 );
 
         assert_eq( v8.get_int(),   -1 );
         assert_eq( v8.get_int64(), -1 );
-        assert_eq( v8.get_uint64(), ULLONG_MAX );
+        assert_eq( v8.get_uint64(), max_uint64 );
     }
 
     void test_real_value()
@@ -150,7 +156,7 @@ namespace
     void test_get_value()
     {
         test_get_value( 123 );
-        test_get_value( LLONG_MAX );
+        test_get_value( max_int64 );
         test_get_value( 1.23 );
         test_get_value( true );
         test_get_value( false );
@@ -239,8 +245,8 @@ namespace
         {
             check_copy( 1 );
             check_copy( 2.0 );
-            check_copy( LLONG_MAX );
-            check_copy( ULLONG_MAX );
+            check_copy( max_int64 );
+            check_copy( max_uint64 );
             check_copy( string("test") );
             check_copy( true );
             check_copy( false );
@@ -306,12 +312,10 @@ namespace
         check_an_int_is_a_real( -1, -1.0 );
         check_an_int_is_a_real(  0,  0.0 );
         check_an_int_is_a_real(  1,  1.0 );
-        check_an_int_is_a_real( LLONG_MAX,  9223372036854775800.0 );
-        check_an_int_is_a_real( ULLONG_MAX, 18446744073709552000.0 );
+        check_an_int_is_a_real( max_int64,  9223372036854775800.0 );
+        check_an_int_is_a_real( max_uint64, 18446744073709552000.0 );
     }
 }
-
-#include <iostream>
 
 void json_spirit::test_value()
 {

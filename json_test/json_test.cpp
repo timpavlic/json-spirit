@@ -1,7 +1,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #include "json_spirit_value_test.h"
 #include "json_spirit_writer_test.h"

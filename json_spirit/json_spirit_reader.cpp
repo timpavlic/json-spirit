@@ -1,7 +1,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #include "json_spirit_reader.h"
 #include "json_spirit_value.h"
@@ -255,7 +255,7 @@ namespace
             assert( c == '[' );
      
             begin_compound< Array_type >();
-       }
+        }
 
         void end_array( Char_type c )
         {
@@ -313,6 +313,9 @@ namespace
         }
 
     private:
+
+        Semantic_actions& operator=( const Semantic_actions& ); 
+                                    // to prevent "assignment operator could not be generated" warning
 
         Value_type* add_first( const Value_type& value )
         {
@@ -433,8 +436,10 @@ namespace
         }
 
         template< typename ScannerT >
-        struct definition
+        class definition
         {
+        public:
+
             definition( const Json_grammer& self )
             {
                 typedef typename Value_type::String_type::value_type Char_type;
@@ -526,6 +531,10 @@ namespace
 
             const rule< ScannerT >& start() const { return json_; }
         };
+
+    private:
+
+        Json_grammer& operator=( const Json_grammer& ); // to prevent "assignment operator could not be generated" warning
 
         Semantic_actions_t& actions_;
     };

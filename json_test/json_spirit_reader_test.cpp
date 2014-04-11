@@ -1,7 +1,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #include "json_spirit_reader_test.h"
 #include "json_spirit_reader.h"
@@ -743,7 +743,7 @@ namespace
             assert_eq( a[2].get_bool(), false );
             assert_eq( a[3].get_int(), 1 );
             assert_eq( a[3].get_int64(), 1 );
-            assert_eq( a[3].get_uint64(), 1 );
+            assert_eq( a[3].get_uint64(), 1u );
             assert_eq( a[3].get_real(), 1.0 );
             assert_eq( a[4].get_real(), 12.3 );
             assert_eq( a[5].is_null(), true );

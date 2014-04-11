@@ -1,7 +1,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #include "json_spirit_writer_test.h"
 #include "json_spirit_writer.h"
@@ -9,7 +9,7 @@
 #include "utils_test.h"
 
 #include <sstream>
-#include <limits.h>
+#include <boost/integer_traits.hpp>
 
 using namespace json_spirit;
 using namespace std;
@@ -17,6 +17,9 @@ using namespace boost;
 
 namespace
 {
+    const int64_t max_int64   = integer_traits< int64_t  >::max();
+    const uint64_t max_uint64 = integer_traits< uint64_t >::max();
+
     template< class Config_type >
     struct Test_runner
     {
@@ -194,11 +197,11 @@ namespace
 
             add_value( obj, "name_1", 11 );
             add_value( obj, "name_2", INT_MAX );
-            add_value( obj, "name_3", LLONG_MAX );
+            add_value( obj, "name_3", max_int64 );
 
             ostringstream os;
 
-            os << "{\"name_1\":11,\"name_2\":" << INT_MAX << ",\"name_3\":" << LLONG_MAX << "}";
+            os << "{\"name_1\":11,\"name_2\":" << INT_MAX << ",\"name_3\":" << max_int64 << "}";
      
             check_eq( obj, os.str().c_str() );
         }
@@ -494,10 +497,10 @@ namespace
             check_eq( Value_type( -1 ),            "-1" );
             check_eq( Value_type( int64_t( -1 ) ), "-1" );
 
-            check_eq( Value_type( LLONG_MAX ),             "9223372036854775807" );
-            check_eq( Value_type( uint64_t( LLONG_MAX ) ), "9223372036854775807" );
+            check_eq( Value_type( max_int64 ),             "9223372036854775807" );
+            check_eq( Value_type( uint64_t( max_int64 ) ), "9223372036854775807" );
 
-            check_eq( Value_type( ULLONG_MAX ), "18446744073709551615" );
+            check_eq( Value_type( max_uint64 ), "18446744073709551615" );
         }
 
         void run_tests()

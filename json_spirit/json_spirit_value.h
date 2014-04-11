@@ -4,7 +4,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
@@ -17,6 +17,7 @@
 #include <boost/config.hpp> 
 #include <boost/cstdint.hpp> 
 #include <boost/shared_ptr.hpp> 
+#include <boost/variant.hpp> 
 
 namespace json_spirit
 {
@@ -75,20 +76,12 @@ namespace json_spirit
 
     private:
 
+        typedef boost::variant< String_type, 
+                                boost::recursive_wrapper< Object >, boost::recursive_wrapper< Array >, 
+                                bool, boost::int64_t, double > Variant;
+
         Value_type type_;
-
-        typedef boost::shared_ptr< Object > Object_ptr;
-        typedef boost::shared_ptr< Array > Array_ptr;
-
-        String_type str_;
-        Object_ptr obj_p_;
-        Array_ptr array_p_;
-        union
-        {
-           bool bool_;
-           boost::int64_t i_;
-           double d_;
-        };
+        Variant v_;
         bool is_uint64_;
     };
 
@@ -220,7 +213,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( const Const_str_ptr value )
     :   type_( str_type )
-    ,   str_( value )
+    ,   v_( String_type( value ) )
     ,   is_uint64_( false )
     {
     }
@@ -228,7 +221,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( const String_type& value )
     :   type_( str_type )
-    ,   str_( value )
+    ,   v_( value )
     ,   is_uint64_( false )
     {
     }
@@ -236,7 +229,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( const Object& value )
     :   type_( obj_type )
-    ,   obj_p_( new Object( value ) )
+    ,   v_( value )
     ,   is_uint64_( false )
     {
     }
@@ -244,7 +237,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( const Array& value )
     :   type_( array_type )
-    ,   array_p_( new Array( value ) )
+    ,   v_( value )
     ,   is_uint64_( false )
     {
     }
@@ -252,7 +245,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( bool value )
     :   type_( bool_type )
-    ,   bool_( value )
+    ,   v_( value )
     ,   is_uint64_( false )
     {
     }
@@ -260,7 +253,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( int value )
     :   type_( int_type )
-    ,   i_( value )
+    ,   v_( static_cast< boost::int64_t >( value ) )
     ,   is_uint64_( false )
     {
     }
@@ -268,7 +261,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( boost::int64_t value )
     :   type_( int_type )
-    ,   i_( value )
+    ,   v_( value )
     ,   is_uint64_( false )
     {
     }
@@ -276,7 +269,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( boost::uint64_t value )
     :   type_( int_type )
-    ,   i_( static_cast< boost::int64_t >( value ) )
+    ,   v_( static_cast< boost::int64_t >( value ) )
     ,   is_uint64_( true )
     {
     }
@@ -284,7 +277,7 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( double value )
     :   type_( real_type )
-    ,   d_( value )
+    ,   v_( value )
     ,   is_uint64_( false )
     {
     }
@@ -292,19 +285,9 @@ namespace json_spirit
     template< class Config >
     Value_impl< Config >::Value_impl( const Value_impl< Config >& other )
     :   type_( other.type() )
+    ,   v_( other.v_ )
     ,   is_uint64_( other.is_uint64_ )
     {
-        switch( type_ )
-        {
-            case str_type:   str_     = other.get_str();                               break;
-            case obj_type:   obj_p_   = Object_ptr( new Object( other.get_obj() ) );   break;
-            case array_type: array_p_ = Array_ptr ( new Array ( other.get_array() ) ); break;
-            case bool_type:  bool_    = other.get_bool();                              break;
-            case int_type:   i_       = other.get_int64();                             break;
-            case real_type:  d_       = other.get_real();                              break;
-            case null_type:                                                            break;
-            default: assert( false );
-        };
     }
 
     template< class Config >
@@ -313,18 +296,8 @@ namespace json_spirit
         Value_impl tmp( lhs );
 
         std::swap( type_, tmp.type_ );
-        str_    .swap( tmp.str_ );
-        obj_p_  .swap( tmp.obj_p_ );
-        array_p_.swap( tmp.array_p_ );
+        std::swap( v_, tmp.v_ );
         std::swap( is_uint64_, tmp.is_uint64_ );
-
-        switch( type_ )
-        {
-            case bool_type:  std::swap( bool_, tmp.bool_ ); break;
-            case int_type:   std::swap( i_,    tmp.i_ );    break;
-            case real_type:  std::swap( d_,    tmp.d_ );    break;
-            default: break;
-        };
 
         return *this;
     }
@@ -336,21 +309,7 @@ namespace json_spirit
 
         if( type() != lhs.type() ) return false;
 
-        switch( type_ )
-        {
-            case str_type:   return get_str()   == lhs.get_str();
-            case obj_type:   return get_obj()   == lhs.get_obj();
-            case array_type: return get_array() == lhs.get_array();
-            case bool_type:  return get_bool()  == lhs.get_bool();
-            case int_type:   return ( get_int64() == lhs.get_int64() ) &&
-                                    ( is_uint64() == lhs.is_uint64() );
-            case real_type:  return get_real()  == lhs.get_real();
-            case null_type:  return true;
-        };
-
-        assert( false );
-
-        return false; 
+        return v_ == lhs.v_; 
     }
 
     template< class Config >
@@ -376,7 +335,7 @@ namespace json_spirit
     {
         assert( type() == str_type );
 
-        return str_;
+        return *boost::get< String_type >( &v_ );
     }
 
     template< class Config >
@@ -384,7 +343,7 @@ namespace json_spirit
     {
         assert( type() == obj_type );
 
-        return *obj_p_;
+        return *boost::get< Object >( &v_ );
     }
      
     template< class Config >
@@ -392,7 +351,7 @@ namespace json_spirit
     {
         assert( type() == array_type );
 
-        return *array_p_;
+        return *boost::get< Array >( &v_ );
     }
      
     template< class Config >
@@ -400,7 +359,7 @@ namespace json_spirit
     {
         assert( type() == bool_type );
 
-        return bool_;
+        return boost::get< bool >( v_ );
     }
      
     template< class Config >
@@ -408,7 +367,7 @@ namespace json_spirit
     {
         assert( type() == int_type );
 
-        return static_cast< int >( i_ );
+        return static_cast< int >( get_int64() );
     }
     
     template< class Config >
@@ -416,7 +375,7 @@ namespace json_spirit
     {
         assert( type() == int_type );
 
-        return i_;
+        return boost::get< boost::int64_t >( v_ );
     }
     
     template< class Config >
@@ -424,7 +383,7 @@ namespace json_spirit
     {
         assert( type() == int_type );
 
-        return static_cast< boost::uint64_t >( i_ );
+        return static_cast< boost::uint64_t >( get_int64() );
     }
 
     template< class Config >
@@ -438,7 +397,7 @@ namespace json_spirit
 
         assert( type() == real_type );
 
-        return d_;
+        return boost::get< double >( v_ );
     }
 
     template< class Config >
@@ -446,7 +405,7 @@ namespace json_spirit
     {
         assert( type() == obj_type );
 
-        return *obj_p_;
+        return *boost::get< Object >( &v_ );
     }
 
     template< class Config >
@@ -454,7 +413,7 @@ namespace json_spirit
     {
         assert( type() == array_type );
 
-        return *array_p_;
+        return *boost::get< Array >( &v_ );
     }
 
     template< class Config >

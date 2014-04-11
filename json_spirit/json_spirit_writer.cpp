@@ -1,7 +1,7 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.01
+// json spirit version 4.02
 
 #include "json_spirit_writer.h"
 #include "json_spirit_value.h"
@@ -15,27 +15,30 @@ using namespace std;
 
 namespace
 {
-    template< typename Char_type >
-    Char_type to_hex( Char_type c )
+    char to_hex_char( unsigned int c )
     {
         assert( c <= 0xF );
 
-        if( c < 10 ) return '0' + c;
+        const char ch = static_cast< char >( c );
 
-        return 'A' + c - 10;
+        if( ch < 10 ) return '0' + ch;
+
+        return 'A' - 10 + ch;
     }
 
     template< class String_type >
     String_type non_printable_to_string( unsigned int c )
     {
+        typedef typename String_type::value_type Char_type;
+
         String_type result( 6, '\\' );
 
         result[1] = 'u';
 
-        result[ 5 ] = to_hex( c & 0x000F ); c >>= 4;
-        result[ 4 ] = to_hex( c & 0x000F ); c >>= 4;
-        result[ 3 ] = to_hex( c & 0x000F ); c >>= 4;
-        result[ 2 ] = to_hex( c & 0x000F );
+        result[ 5 ] = to_hex_char( c & 0x000F ); c >>= 4;
+        result[ 4 ] = to_hex_char( c & 0x000F ); c >>= 4;
+        result[ 3 ] = to_hex_char( c & 0x000F ); c >>= 4;
+        result[ 2 ] = to_hex_char( c & 0x000F );
 
         return result;
     }
@@ -213,6 +216,8 @@ namespace
         {
             if( pretty_ ) os_ << '\n';
         }
+
+        Generator& operator=( const Generator& ); // to prevent "assignment operator could not be generated" warning
 
         Ostream_type& os_;
         int indentation_level_;
