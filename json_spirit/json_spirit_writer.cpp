@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.04
+// json spirit version 2.05
 
 #include "json_spirit_writer.h"
 #include "json_spirit_value.h"
@@ -191,7 +191,7 @@ namespace
 
                     if( add_esc_char( c, result ) ) continue;
 
-                    const unsigned int unsigned_c( ( c >= 0 ) ? c : 256 + c );
+                    const wint_t unsigned_c( ( c >= 0 ) ? c : 256 + c );
 
                     if( iswprint( unsigned_c ) )
                     {

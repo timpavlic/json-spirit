@@ -3,12 +3,12 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.04
+// json spirit version 2.05
 
 #include "json_spirit_writer_test.h"
 #include "json_spirit_writer.h"
 #include "json_spirit_value.h" 
-#include "Utils_test.h"
+#include "utils_test.h"
 
 #include <sstream>
 
@@ -207,14 +207,14 @@ namespace
             Object_t obj;
 
             add_value( obj, "name_1", 1.0 );
-            add_value( obj, "name_2", 1.234567890123456e-78 );
+            add_value( obj, "name_2", 1.234567890123456e-108 );
             add_value( obj, "name_3", -1234567890.123456 );
-            add_value( obj, "name_4", -1e-6 );
+            add_value( obj, "name_4", -1.2e-126 );
      
             check_eq( obj, "{\"name_1\":1.000000000000000,"
-                           "\"name_2\":1.234567890123456e-078,"
+                           "\"name_2\":1.234567890123456e-108,"
                            "\"name_3\":-1234567890.123456,"
-                           "\"name_4\":-1.000000000000000e-006}" );
+                           "\"name_4\":-1.200000000000000e-126}" );
         }
 
         void test_objs_with_null_pairs()
@@ -525,9 +525,18 @@ namespace
     }
 #endif
 
+    bool is_printable( char c )
+    {
+        const wint_t unsigned_c( ( c >= 0 ) ? c : 256 + c );
+
+        return iswprint( unsigned_c ) != 0;
+    }
+
     void test_extended_ascii()
     {
-        assert_eq( write( Array( 1, "הצüß" ) ), "[\"הצüß\"]" );
+        const string expeced_result( is_printable( 'ה' ) ? "[\"הצüß\"]" : "[\"\\u00E4\\u00F6\\u00FC\\u00DF\"]" );
+
+        assert_eq( write( Array( 1, "הצüß" ) ), expeced_result );
     }
 }
 

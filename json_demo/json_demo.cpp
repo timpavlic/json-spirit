@@ -3,13 +3,13 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.04
+// json spirit version 2.05
 
 #include "json_spirit.h"
 #include <cassert>
 #include <algorithm>
 #include <fstream>
-#include <boost\bind.hpp>
+#include <boost/bind.hpp>
 
 using namespace std;
 using namespace boost;

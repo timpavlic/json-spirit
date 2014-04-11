@@ -3,13 +3,13 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.04
+// json spirit version 2.05
 
 #include "json_spirit_reader_test.h"
 #include "json_spirit_reader.h"
 #include "json_spirit_value.h" 
 #include "json_spirit_writer.h" 
-#include "Utils_test.h"
+#include "utils_test.h"
 
 #include <sstream>
 #include <boost/assign/list_of.hpp>
@@ -294,7 +294,7 @@ namespace
                             "    \"name 1\" : \"value 1\",\n"
                             "    \"name 2\" : 1.200000000000000,\n"
                             "    \"name 3\" : \"value 3\",\n"
-                            "    \"name_4\" : 1.234567890123456e+025,\n"
+                            "    \"name_4\" : 1.234567890123456e+125,\n"
                             "    \"name_5\" : -1.234000000000000e-123,\n"
                             "    \"name_6\" : 1.000000000000000e-123,\n"
                             "    \"name_7\" : 1234567890.123456\n"

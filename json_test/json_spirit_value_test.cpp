@@ -3,11 +3,11 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.04
+// json spirit version 2.05
 
 #include "json_spirit_value_test.h"
 #include "json_spirit_value.h"
-#include "Utils_test.h"
+#include "utils_test.h"
 
 using namespace json_spirit;
 using namespace std;

@@ -3,10 +3,12 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.04
+// json spirit version 2.05
 
 #include "json_spirit_reader.h"
 #include "json_spirit_value.h"
+
+//#define BOOST_SPIRIT_THREADSAFE  // uncomment for multithreaded use, requires linking to boost.thead
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
