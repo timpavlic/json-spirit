@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.03
+// json spirit version 2.04
 
 #include "json_spirit_value_test.h"
 #include "json_spirit_value.h"
@@ -109,6 +109,30 @@ namespace
         assert_eq( v1.type(), null_type );
         assert_eq ( v1, v2 );
     }
+
+    template< typename T >
+    void test_get_value( const T& t )
+    {
+        assert_eq( Value( t ).get_value< T >(), t );
+    }
+
+    void test_get_value()
+    {
+        test_get_value( 123 );
+        test_get_value( LLONG_MAX );
+        test_get_value( 1.23 );
+        test_get_value( true );
+        test_get_value( false );
+        test_get_value( string( "test" ) );
+
+        Array a; a.push_back( 1 ); a.push_back( "2" );
+
+        test_get_value( a );
+
+        Object obj; obj.push_back( Pair( "name1", "value1" ) );
+
+        test_get_value( obj );
+    }
 }
 
 void json_spirit::test_value()
@@ -147,4 +171,6 @@ void json_spirit::test_value()
     test_int_value();
     test_real_value();
     test_null_value();
+    test_get_value();
 }
+

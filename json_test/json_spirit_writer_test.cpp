@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.03
+// json spirit version 2.04
 
 #include "json_spirit_writer_test.h"
 #include "json_spirit_writer.h"
@@ -471,6 +471,15 @@ namespace
             assert_eq( os.str(), to_str( "[1,2]" ) );
         }
 
+        void test_values()
+        {
+            check_eq( 123, "123" );
+            check_eq( 1.234, "1.234000000000000" );
+            check_eq( to_str( "abc" ), "\"abc\"" );
+            check_eq( false, "false" );
+            check_eq( Value_t::null, "null" );
+        }
+
         void run_tests()
         {
             test_empty_obj();
@@ -495,6 +504,7 @@ namespace
             test_obj_and_arrays();
             test_escape_chars();
             test_to_stream();
+            test_values();
         }
     };
 

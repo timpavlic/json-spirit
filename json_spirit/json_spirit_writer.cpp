@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.03
+// json spirit version 2.04
 
 #include "json_spirit_writer.h"
 #include "json_spirit_value.h"
@@ -211,7 +211,7 @@ namespace
             bool pretty_;
         };
 
-        static void write( const Value_t& value, Ostream_t& os, bool pretty  )
+        static void write( const Value_t& value, Ostream_t& os, bool pretty )
         {
             Generator( value, os, pretty );
         }

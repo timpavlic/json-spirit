@@ -6,7 +6,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.03
+// json spirit version 2.04
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
@@ -60,6 +60,9 @@ namespace json_spirit
         Object& get_obj();
         Array&  get_array();
 
+        template< typename T > T get_value() const;  // example usage: int    i = value.get_value< int >();
+                                                     // or             double d = value.get_value< double >();
+
         static const Value_impl null;
 
     private:
@@ -77,7 +80,7 @@ namespace json_spirit
     template< class String >
     struct Pair_impl
     {
-        Pair_impl( const String& name, const Value_impl< String >&  value );
+        Pair_impl( const String& name, const Value_impl< String >& value );
 
         bool operator==( const Pair_impl< String >& lhs ) const;
 
@@ -299,6 +302,65 @@ namespace json_spirit
         }
 
         return result;
+    }
+
+    //
+
+    namespace internal_
+    {
+        template< typename T >
+        struct Type_to_type
+        {
+        };
+
+        template< class Value > 
+        int get_value( const Value& value, Type_to_type< int > )
+        {
+            return value.get_int();
+        }
+       
+        template< class Value > 
+        boost::int64_t get_value( const Value& value, Type_to_type< boost::int64_t > )
+        {
+            return value.get_int64();
+        }
+       
+        template< class Value > 
+        double get_value( const Value& value, Type_to_type< double > )
+        {
+            return value.get_real();
+        }
+       
+        template< class Value > 
+        typename Value::String_type get_value( const Value& value, Type_to_type< typename Value::String_type > )
+        {
+            return value.get_str();
+        }
+       
+        template< class Value > 
+        typename Value::Array get_value( const Value& value, Type_to_type< typename Value::Array > )
+        {
+            return value.get_array();
+        }
+       
+        template< class Value > 
+        typename Value::Object get_value( const Value& value, Type_to_type< typename Value::Object > )
+        {
+            return value.get_obj();
+        }
+       
+        template< class Value > 
+        bool get_value( const Value& value, Type_to_type< bool > )
+        {
+            return value.get_bool();
+        }
+    }
+
+    template< class String >
+    template< typename T > 
+    T Value_impl< String >::get_value() const
+    {
+        return internal_::get_value( *this, internal_::Type_to_type< T >() );
     }
 }
 

@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.03
+// json spirit version 2.04
 
 #include "json_spirit_reader_test.h"
 #include "json_spirit_reader.h"
@@ -67,13 +67,13 @@ namespace
             }
         }
 
-        void test_syntax( const char* c_str )
+        void test_syntax( const char* c_str, bool expected_result = true )
         {
             Value_t value;
 
             const bool success = read( to_str( c_str ), value );
 
-            assert_eq( success, true );
+            assert_eq( success, expected_result );
         }
 
         template< typename Int >
@@ -125,13 +125,26 @@ namespace
 
             test_syntax( INT_MIN, INT_MAX );
             test_syntax( LLONG_MIN, LLONG_MAX );
+            test_syntax( "[1 2 3]", false );
         }
 
-        void check_read( const char* c_str, Value_t& value )
+        Value_t read_cstr( const char* c_str )
         {
-            const bool success = read( to_str( c_str ), value );
+            Value_t value;
 
-            assert_eq( success, true );
+            read( to_str( c_str ), value );
+
+            return value;
+        }
+
+        bool read_cstr( const char* c_str, Value_t& value )
+        {
+            return read( to_str( c_str ), value );
+        }
+
+        void check_read( const char* c_str, Value_t& value, bool expected_result = true )
+        {
+            assert_eq( read_cstr( c_str, value ), expected_result );
         }
 
         void check_reading( const char* c_str )
@@ -434,12 +447,58 @@ namespace
             test_escape_chars( "\\u0061\\u0062\\u0063", "abc" );
         }
 
+        void check_is_null( const char* c_str  )
+        {
+            assert_eq( read_cstr( c_str ).type(), null_type ); 
+        }
+
+        template< typename T >
+        void check_value( const char* c_str, const T& expected_value )
+        {
+            const Value_t v( read_cstr( c_str ) );
+            
+            assert_eq( v.template get_value< T >(), expected_value ); 
+        }
+
+        void test_values()
+        {
+            check_value( "1",        1 );
+            check_value( "1.5",      1.5 );
+            check_value( "\"Test\"", to_str( "Test" ) );
+            check_value( "true",     true );
+            check_value( "false",    false );
+            check_is_null( "null" );
+        }
+
+        void check_read_fails( const char* c_str )
+        {
+            Value_t value;
+
+            check_read( c_str, value, false );
+        }
+
+        void test_error_cases()
+        {
+            check_read_fails( "[\"1\\\\\",\"2\\\"]" );
+            check_read_fails( "." );
+            check_read_fails( "1 1" );
+            check_read_fails( "\"\"\"" );
+            check_read_fails( "'1'" );
+            check_read_fails( "{1 2}" );
+            check_read_fails( "1.263Q" );
+            check_read_fails( "1.26 3" );
+            check_read_fails( "'" );
+            check_read_fails( "[1 2]" );
+        }
+
         void run_tests()
         {
             test_syntax();
             test_reading();
             test_from_stream();
             test_escape_chars();
+            test_values();
+            test_error_cases();
         }
     };
 

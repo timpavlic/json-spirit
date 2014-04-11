@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.03
+// json spirit version 2.04
 
 #include "json_spirit_reader.h"
 #include "json_spirit_value.h"
@@ -124,14 +124,20 @@ namespace
 
         private:
 
+            void add_first( const Value_t& value )
+            {
+                assert( current_p_ == 0 );
+
+                value_ = value;
+                current_p_ = &value_;
+            }
+
             template< class Array_or_obj >
             void begin_compound()
             {
                 if( current_p_ == 0 )
                 {
-                    value_ = Array_or_obj();
-
-                    current_p_ = &value_;
+                    add_first( Array_or_obj() );
                 }
                 else
                 {
@@ -164,11 +170,15 @@ namespace
 
             void add_to_current( const Value_t& value )
             {
-                if( current_p_->type() == array_type )
+                if( !current_p_ )
+                {
+                    add_first( value );
+                }
+                else if( current_p_->type() == array_type )
                 {
                     current_p_->get_array().push_back( value );
                 }
-                else 
+                else  if( current_p_->type() == obj_type )
                 {
                     current_p_->get_obj().push_back( Pair_t( name_, value ) );
                 }
@@ -219,14 +229,14 @@ namespace
                     Int_action  new_int    ( bind( &Semantic_actions::new_int,     &self.actions_, _1 ) );
 
                     json_
-                        = ( object_ | array_ ) >> end_p
+                        = value_ >> end_p
                         ;
 
                     object_ 
                         = confix_p
                           ( 
                               ch_p('{')[ begin_obj ], 
-                              *members_, 
+                              !members_, 
                               ch_p('}')[ end_obj ] 
                           )
                         ;
@@ -255,7 +265,7 @@ namespace
                         = confix_p
                           ( 
                               ch_p('[')[ begin_array ], 
-                              *list_p( elements_, ',' ), 
+                              !elements_, 
                               ch_p(']')[ end_array ] 
                           )
                         ;
