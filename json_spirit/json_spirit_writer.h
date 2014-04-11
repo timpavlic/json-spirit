@@ -6,7 +6,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 3.00
+// json spirit version 3.01
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once

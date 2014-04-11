@@ -3,7 +3,7 @@
 
 /* Copyright (c) 2007-2009 John W Wilkinson
 
-   json spirit version 3.00
+   json spirit version 3.01
 
    This source code can be used for any purpose as long as
    this comment is retained. */

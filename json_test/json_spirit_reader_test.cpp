@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 3.00
+// json spirit version 3.01
 
 #include "json_spirit_reader_test.h"
 #include "json_spirit_reader.h"
@@ -11,6 +11,7 @@
 #include "json_spirit_writer.h" 
 #include "utils_test.h"
 
+#include <limits.h>
 #include <sstream>
 #include <boost/assign/list_of.hpp>
 #include <boost/timer.hpp>
