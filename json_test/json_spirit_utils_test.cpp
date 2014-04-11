@@ -1,11 +1,11 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.02
+// json spirit version 4.03
 
 #include "json_spirit_utils_test.h"
-#include "json_spirit_utils.h"
 #include "utils_test.h"
+#include "json_spirit_utils.h"
 
 #include <boost/assign/list_of.hpp>
 

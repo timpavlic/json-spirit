@@ -1,11 +1,11 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.02
+// json spirit version 4.03
 
 #include "json_spirit_value_test.h"
-#include "json_spirit_value.h"
 #include "utils_test.h"
+#include "json_spirit_value.h"
 #include <limits.h>
 
 #include <boost/assign/list_of.hpp>
@@ -315,6 +315,40 @@ namespace
         check_an_int_is_a_real( max_int64,  9223372036854775800.0 );
         check_an_int_is_a_real( max_uint64, 18446744073709552000.0 );
     }
+
+    template< typename T >
+    void check_wrong_type_exceptions( const Value_type vtype )
+    {
+        Value v;
+
+        assert_eq( v.type(), null_type );
+
+        try
+        {
+            v.get_value< T >();
+
+            assert( false );
+        }
+        catch( const runtime_error& e )
+        {
+            ostringstream os;
+
+            os << "value type is " << null_type << " not " << vtype;
+
+            assert_eq( e.what(), os.str() );
+        }
+    }
+
+    void test_wrong_type_exceptions()
+    {
+        check_wrong_type_exceptions< Object >( obj_type );
+        check_wrong_type_exceptions< Array >( array_type );
+        check_wrong_type_exceptions< string >( str_type );
+        check_wrong_type_exceptions< bool >( bool_type );
+        check_wrong_type_exceptions< boost::int64_t >( int_type );
+        check_wrong_type_exceptions< int >( int_type );
+        check_wrong_type_exceptions< double >( real_type );
+    }
 }
 
 void json_spirit::test_value()
@@ -358,4 +392,5 @@ void json_spirit::test_value()
     test_obj_map_implemention();
     test_is_uint64();
     test_an_int_is_a_real();
+    test_wrong_type_exceptions();
 }

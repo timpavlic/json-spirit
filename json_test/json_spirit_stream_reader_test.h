@@ -1,5 +1,5 @@
-#ifndef JSON_SPIRIT
-#define JSON_SPIRIT
+#ifndef JSON_SPIRIT_STREAM_READER_TEST
+#define JSON_SPIRIT_STREAM_READER_TEST
 
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
@@ -10,9 +10,9 @@
 # pragma once
 #endif
 
-#include "json_spirit_value.h"
-#include "json_spirit_reader.h"
-#include "json_spirit_writer.h"
-#include "json_spirit_utils.h"
+namespace json_spirit
+{
+    void test_stream_reader();
+}
 
 #endif

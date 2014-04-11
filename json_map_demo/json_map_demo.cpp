@@ -1,7 +1,10 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.02
+// json spirit version 4.03
+
+// This demo shows you how to read and write JSON objects and arrays.
+// In this demo objects are stored as a map of names to values.
 
 #include "json_spirit.h"
 #include <cassert>

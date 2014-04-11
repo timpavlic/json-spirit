@@ -3,10 +3,12 @@
 
 // json spirit version 4.03
 
-// This demo shows you how to read and write JSON objects and arrays.
+// This demo shows you how to read and write JSON objects and arrays 
+// using header files only, i.e. not linking to the JSON Spirit object library.
 // In this demo objects are stored as a vector of name/value pairs.
 
-#include "json_spirit.h"
+#include "json_spirit_reader_template.h"
+#include "json_spirit_writer_template.h"
 #include <cassert>
 #include <fstream>
 
@@ -95,7 +97,7 @@ void write_addrs( const char* file_name, const Address addrs[] )
 
     ofstream os( file_name );
 
-    write_formatted( addr_array, os );
+    write_stream( Value( addr_array ), os, true );  // NB need to convert Array to a Value
 
     os.close();
 }
@@ -106,7 +108,7 @@ vector< Address > read_addrs( const char* file_name )
 
     Value value;
 
-    read( is, value );
+    read_stream( is, value );
 
     const Array& addr_array = value.get_array();
 

@@ -1,13 +1,13 @@
 //          Copyright John W. Wilkinson 2007 - 2009.
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.02
+// json spirit version 4.03
 
 #include "json_spirit_reader_test.h"
+#include "utils_test.h"
 #include "json_spirit_reader.h"
 #include "json_spirit_value.h" 
 #include "json_spirit_writer.h" 
-#include "utils_test.h"
 
 #include <limits.h>
 #include <sstream>
@@ -681,19 +681,9 @@ namespace
             check_array( value, expected_size );
         }
 
-        void test_sequence_of_values()
+        void check_reading_arrays( const char* arrays_str )
         {
-            check_value_sequence( "",   Ints(), false );
-            check_value_sequence( " ",  Ints(), false );
-            check_value_sequence( "  ", Ints(), false );
-            check_value_sequence( "     10 ",      list_of( 10 ), false );
-            check_value_sequence( "     10 11 ",   list_of( 10 )( 11 ), false );
-            check_value_sequence( "     10 11 12", list_of( 10 )( 11 )( 12 ), true);
-            check_value_sequence( "10 11 12",      list_of( 10 )( 11 )( 12 ), true);
-
-            // 
-
-            const String_type str( to_str( "[] [ 1 ] [ 1, 2 ]  [ 1, 2, 3 ]" ) );
+            const String_type str( to_str( arrays_str ) );
 
             Iter_type       begin = str.begin();
             const Iter_type end   = str.end();
@@ -709,6 +699,23 @@ namespace
             check_reading_array( is, 1 );
             check_reading_array( is, 2 );
             check_reading_array( is, 3 );
+        }
+
+        void test_sequence_of_values()
+        {
+            check_value_sequence( "",   Ints(), false );
+            check_value_sequence( " ",  Ints(), false );
+            check_value_sequence( "  ", Ints(), false );
+            check_value_sequence( "     10 ",      list_of( 10 ), false );
+            check_value_sequence( "     10 11 ",   list_of( 10 )( 11 ), false );
+            check_value_sequence( "     10 11 12", list_of( 10 )( 11 )( 12 ), true);
+            check_value_sequence( "10 11 12",      list_of( 10 )( 11 )( 12 ), true);
+
+            // 
+
+            check_reading_arrays( "[] [ 1 ] [ 1, 2 ] [ 1, 2, 3 ]" );
+ //         check_reading_arrays( "[][1][1,2][1,2,3]" );  // fails due to multi_pass iterator bug,
+                                                          // use stream_reader class instead
         }
 
         void test_uint64( const char* value_str, int expected_int, int64_t expected_int64, uint64_t expected_uint64 )
