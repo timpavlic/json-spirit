@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 3.01
+// json spirit version 4.00
 
 #include "json_spirit_writer_test.h"
 #include "json_spirit_writer.h"
@@ -11,58 +11,60 @@
 #include "utils_test.h"
 
 #include <sstream>
+#include <limits.h>
 
 using namespace json_spirit;
 using namespace std;
+using namespace boost;
 
 namespace
 {
-    template< class Value_t >
+    template< class Config_type >
     struct Test_runner
     {
-        typedef typename Value_t::String_type     String_t;
-        typedef typename Value_t::Object          Object_t;
-        typedef typename Value_t::Array           Array_t;
-        typedef typename String_t::value_type     Char_t;
-        typedef typename String_t::const_iterator Iter_t;
-        typedef Pair_impl< String_t >             Pair_t;
-        typedef std::basic_ostream< Char_t >      Ostream_t;
+        typedef typename Config_type::String_type String_type;
+        typedef typename Config_type::Object_type Object_type;
+        typedef typename Config_type::Array_type Array_type;
+        typedef typename Config_type::Value_type Value_type;
+        typedef typename String_type::value_type Char_type;
+        typedef typename String_type::const_iterator Iter_type;
+        typedef std::basic_ostream< Char_type > Ostream_type;
 
-        String_t to_str( const char* c_str )
+        String_type to_str( const char* c_str )
         {
-            return ::to_str< String_t >( c_str );
+            return ::to_str< String_type >( c_str );
         }
  
-        void add_value( Object_t& obj, const char* c_name, const Value_t& value )
+        void add_value( Object_type& obj, const char* c_name, const Value_type& value )
         {
-            obj.push_back( Pair_t( to_str( c_name ), value ) );
+            Config_type::add( obj, to_str( c_name ), value );
         }
 
-        void add_c_str( Object_t& obj, const char* c_name, const char* c_value )
+        void add_c_str( Object_type& obj, const char* c_name, const char* c_value )
         {
             add_value( obj, c_name, to_str( c_value ) );
         }
 
-        void check_eq( const Value_t& value, const char* expected_result )
+        void check_eq( const Value_type& value, const char* expected_result )
         {
             assert_eq( write( value ), to_str( expected_result ) );
         }
 
-        void check_eq_pretty( const Value_t& value, const char* expected_result )
+        void check_eq_pretty( const Value_type& value, const char* expected_result )
         {
             assert_eq( write_formatted( value ), to_str( expected_result ) );
         }
 
         void test_empty_obj()
         {
-            check_eq( Object_t(), "{}" );
-            check_eq_pretty( Object_t(), "{\n"
+            check_eq( Object_type(), "{}" );
+            check_eq_pretty( Object_type(), "{\n"
                                          "}" );
         }
 
         void test_obj_with_one_member()
         {
-            Object_t obj;
+            Object_type obj;
 
             add_c_str( obj, "name", "value" );
 
@@ -74,7 +76,7 @@ namespace
 
         void test_obj_with_two_members()
         {
-            Object_t obj;
+            Object_type obj;
 
             add_c_str( obj, "name_1", "value_1" );
             add_c_str( obj, "name_2", "value_2" );
@@ -89,7 +91,7 @@ namespace
 
         void test_obj_with_three_members()
         {
-            Object_t obj;
+            Object_type obj;
 
             add_c_str( obj, "name_1", "value_1" );
             add_c_str( obj, "name_2", "value_2" );
@@ -106,9 +108,9 @@ namespace
 
         void test_obj_with_one_empty_child_obj()
         {
-            Object_t child;
+            Object_type child;
 
-            Object_t root;
+            Object_type root;
 
             add_value( root, "child", child );
 
@@ -122,63 +124,64 @@ namespace
 
         void test_obj_with_one_child_obj()
         {
-            Object_t child;
+            Object_type child;
 
             add_c_str( child, "name_2", "value_2" );
 
-            Object_t root;
+            Object_type root;
 
-            add_c_str( root, "name_1", "value_1" );
             add_value( root, "child", child );
+            add_c_str( root, "name_1", "value_1" );
 
-            check_eq( root, "{\"name_1\":\"value_1\",\"child\":{\"name_2\":\"value_2\"}}" );
+            check_eq( root, "{\"child\":{\"name_2\":\"value_2\"},\"name_1\":\"value_1\"}" );
 
             check_eq_pretty( root, "{\n"
-                                   "    \"name_1\" : \"value_1\",\n"
                                    "    \"child\" : {\n"
                                    "        \"name_2\" : \"value_2\"\n"
-                                   "    }\n"
+                                   "    },\n"
+                                   "    \"name_1\" : \"value_1\"\n"
                                    "}" );
         }
 
         void test_obj_with_grandchild_obj()
         {
-            Object_t child_1; add_c_str( child_1, "name_1", "value_1" );
-            Object_t child_2; add_c_str( child_2, "name_2", "value_2" );
-            Object_t child_3; add_c_str( child_3, "name_3", "value_3" );
+            Object_type child_1; add_c_str( child_1, "name_1", "value_1" );
+            Object_type child_2; 
+            Object_type child_3; add_c_str( child_3, "name_3", "value_3" );
 
             add_value( child_2, "grandchild", child_3 );
+            add_c_str( child_2, "name_2", "value_2" );
 
-            Object_t root;
+            Object_type root;
 
-            add_c_str( root, "name_a", "value_a" );
             add_value( root, "child_1", child_1 );
             add_value( root, "child_2", child_2 );
+            add_c_str( root, "name_a", "value_a" );
             add_c_str( root, "name_b", "value_b" );
 
-            check_eq( root, "{\"name_a\":\"value_a\","
-                            "\"child_1\":{\"name_1\":\"value_1\"},"
-                            "\"child_2\":{\"name_2\":\"value_2\",\"grandchild\":{\"name_3\":\"value_3\"}},"
+            check_eq( root, "{\"child_1\":{\"name_1\":\"value_1\"},"
+                            "\"child_2\":{\"grandchild\":{\"name_3\":\"value_3\"},\"name_2\":\"value_2\"},"
+                            "\"name_a\":\"value_a\","
                             "\"name_b\":\"value_b\"}" );
 
             check_eq_pretty( root, "{\n"
-                                   "    \"name_a\" : \"value_a\",\n"
                                    "    \"child_1\" : {\n"
                                    "        \"name_1\" : \"value_1\"\n"
                                    "    },\n"
                                    "    \"child_2\" : {\n"
-                                   "        \"name_2\" : \"value_2\",\n"
                                    "        \"grandchild\" : {\n"
                                    "            \"name_3\" : \"value_3\"\n"
-                                   "        }\n"
+                                   "        },\n"
+                                   "        \"name_2\" : \"value_2\"\n"
                                    "    },\n"
+                                   "    \"name_a\" : \"value_a\",\n"
                                    "    \"name_b\" : \"value_b\"\n"
                                    "}" );
         }
 
         void test_objs_with_bool_pairs()
         {
-            Object_t obj;
+            Object_type obj;
 
             add_value( obj, "name_1", true  );
             add_value( obj, "name_2", false );
@@ -189,7 +192,7 @@ namespace
 
         void test_objs_with_int_pairs()
         {
-            Object_t obj;
+            Object_type obj;
 
             add_value( obj, "name_1", 11 );
             add_value( obj, "name_2", INT_MAX );
@@ -204,7 +207,7 @@ namespace
 
         void test_objs_with_real_pairs()
         {
-            Object_t obj;
+            Object_type obj;
 
             add_value( obj, "name_1", 1.0 );
             add_value( obj, "name_2", 1.234567890123456e-108 );
@@ -219,25 +222,25 @@ namespace
 
         void test_objs_with_null_pairs()
         {
-            Object_t obj;
+            Object_type obj;
 
-            add_value( obj, "name_1", Value_t::null );
-            add_value( obj, "name_2", Value_t::null );
-            add_value( obj, "name_3", Value_t::null );
+            add_value( obj, "name_1", Value_type::null );
+            add_value( obj, "name_2", Value_type::null );
+            add_value( obj, "name_3", Value_type::null );
      
             check_eq( obj, "{\"name_1\":null,\"name_2\":null,\"name_3\":null}" );
         }
 
         void test_empty_array()
         {
-            check_eq( Array_t(), "[]" );
-            check_eq_pretty( Array_t(), "[\n"
+            check_eq( Array_type(), "[]" );
+            check_eq_pretty( Array_type(), "[\n"
                                         "]" );
         }
 
         void test_array_with_one_member()
         {
-            Array_t arr;
+            Array_type arr;
 
             arr.push_back( to_str( "value" ) );
 
@@ -249,7 +252,7 @@ namespace
 
         void test_array_with_two_members()
         {
-            Array_t arr;
+            Array_type arr;
 
             arr.push_back( to_str( "value_1" ) );
             arr.push_back( 1 );
@@ -263,14 +266,14 @@ namespace
 
         void test_array_with_n_members()
         {
-            Array_t arr;
+            Array_type arr;
 
             arr.push_back( to_str( "value_1" ) );
             arr.push_back( 123 );
             arr.push_back( 123.456 );
             arr.push_back( true );
             arr.push_back( false );
-            arr.push_back( Value_t() );
+            arr.push_back( Value_type() );
 
             check_eq       ( arr, "[\"value_1\",123,123.4560000000000,true,false,null]" );
             check_eq_pretty( arr, "[\n"
@@ -285,9 +288,9 @@ namespace
 
         void test_array_with_one_empty_child_array()
         {
-            Array_t arr;
+            Array_type arr;
 
-            arr.push_back( Array_t() );
+            arr.push_back( Array_type() );
 
             check_eq       ( arr, "[[]]" );
             check_eq_pretty( arr, "[\n"
@@ -298,11 +301,11 @@ namespace
 
         void test_array_with_one_child_array()
         {
-            Array_t child;
+            Array_type child;
 
             child.push_back( 2 );
 
-            Array_t root;
+            Array_type root;
 
             root.push_back( 1 );
             root.push_back( child );
@@ -318,13 +321,13 @@ namespace
 
         void test_array_with_grandchild_array()
         {
-            Array_t child_1; child_1.push_back( 11 );
-            Array_t child_2; child_2.push_back( 22 );
-            Array_t child_3; child_3.push_back( 33 );
+            Array_type child_1; child_1.push_back( 11 );
+            Array_type child_2; child_2.push_back( 22 );
+            Array_type child_3; child_3.push_back( 33 );
 
             child_2.push_back( child_3 );
 
-            Array_t root;
+            Array_type root;
 
             root.push_back( 1);
             root.push_back( child_1 );
@@ -349,11 +352,11 @@ namespace
 
         void test_array_and_objs()
         {
-            Array_t a;
+            Array_type a;
 
             a.push_back( 11 );
 
-            Object_t obj;
+            Object_type obj;
 
             add_value( obj, "a", 1 );
 
@@ -390,11 +393,11 @@ namespace
 
         void test_obj_and_arrays()
         {
-            Object_t obj;
+            Object_type obj;
 
             add_value( obj, "a", 1 );
 
-            Array_t a;
+            Array_type a;
 
             a.push_back( 11 );
 
@@ -432,7 +435,7 @@ namespace
 
         void test_escape_char( const char* esc_str_in, const char* esc_str_out )
         {
-            Object_t obj;
+            Object_type obj;
 
             const string name_str( string( esc_str_in ) + "name" );
 
@@ -459,9 +462,9 @@ namespace
 
         void test_to_stream()
         {
-            basic_ostringstream< Char_t > os;
+            basic_ostringstream< Char_type > os;
 
-            Array_t arr;
+            Array_type arr;
 
             arr.push_back( 1 );
             arr.push_back( 2 );
@@ -477,7 +480,26 @@ namespace
             check_eq( 1.234, "1.234000000000000" );
             check_eq( to_str( "abc" ), "\"abc\"" );
             check_eq( false, "false" );
-            check_eq( Value_t::null, "null" );
+            check_eq( Value_type::null, "null" );
+        }
+
+        void test_uint64()
+        {
+            check_eq( Value_type( 0 ),             "0" );
+            check_eq( Value_type( int64_t( 0 ) ),  "0" );
+            check_eq( Value_type( uint64_t( 0 ) ), "0" );
+
+            check_eq( Value_type( 1 ),             "1" );
+            check_eq( Value_type( int64_t( 1 ) ),  "1" );
+            check_eq( Value_type( uint64_t( 1 ) ), "1" );
+
+            check_eq( Value_type( -1 ),            "-1" );
+            check_eq( Value_type( int64_t( -1 ) ), "-1" );
+
+            check_eq( Value_type( LLONG_MAX ),             "9223372036854775807" );
+            check_eq( Value_type( uint64_t( LLONG_MAX ) ), "9223372036854775807" );
+
+            check_eq( Value_type( ULLONG_MAX ), "18446744073709551615" );
         }
 
         void run_tests()
@@ -505,6 +527,7 @@ namespace
             test_escape_chars();
             test_to_stream();
             test_values();
+            test_uint64();
         }
     };
 
@@ -542,10 +565,12 @@ namespace
 
 void json_spirit::test_writer()
 {
-    Test_runner< Value  >().run_tests();
+    Test_runner< Config  >().run_tests();
+    Test_runner< mConfig >().run_tests();
 
 #ifndef BOOST_NO_STD_WSTRING
-    Test_runner< wValue >().run_tests();
+    Test_runner< wConfig  >().run_tests();
+    Test_runner< wmConfig >().run_tests();
     test_wide_esc_u();
 #endif
 

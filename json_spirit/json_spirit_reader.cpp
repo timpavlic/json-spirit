@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 3.01
+// json spirit version 4.00
 
 #include "json_spirit_reader.h"
 #include "json_spirit_value.h"
@@ -12,16 +12,27 @@
 
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/spirit/core.hpp>
-#include <boost/spirit/utility/confix.hpp>
-#include <boost/spirit/utility/escape_char.hpp>
-#include <boost/spirit/iterator/multi_pass.hpp>
-#include <boost/spirit/iterator/position_iterator.hpp>
+#include <boost/version.hpp>
+
+#if BOOST_VERSION >= 103800
+    #include <boost/spirit/include/classic_core.hpp>
+    #include <boost/spirit/include/classic_confix.hpp>
+    #include <boost/spirit/include/classic_escape_char.hpp>
+    #include <boost/spirit/include/classic_multi_pass.hpp>
+    #include <boost/spirit/include/classic_position_iterator.hpp>
+    using namespace boost::spirit::classic;
+#else
+    #include <boost/spirit/core.hpp>
+    #include <boost/spirit/utility/confix.hpp>
+    #include <boost/spirit/utility/escape_char.hpp>
+    #include <boost/spirit/iterator/multi_pass.hpp>
+    #include <boost/spirit/iterator/position_iterator.hpp>
+    using namespace boost::spirit;
+#endif
 
 using namespace json_spirit;
 using namespace std;
 using namespace boost;
-using namespace boost::spirit;
 
 //
 
@@ -51,12 +62,13 @@ bool Error_position::operator==( const Error_position& lhs ) const
 
 namespace
 {
-    const int_parser< int64_t > int64_p = int_parser< int64_t >();
+    const int_parser < int64_t >  int64_p  = int_parser < int64_t  >();
+    const uint_parser< uint64_t > uint64_p = uint_parser< uint64_t >();
 
-    template< class Iter_t >
-    bool is_eq( Iter_t first, Iter_t last, const char* c_str )
+    template< class Iter_type >
+    bool is_eq( Iter_type first, Iter_type last, const char* c_str )
     {
-        for( Iter_t i = first; i != last; ++i, ++c_str )
+        for( Iter_type i = first; i != last; ++i, ++c_str )
         {
             if( *c_str == 0 ) return false;
 
@@ -66,8 +78,8 @@ namespace
         return true;
     }
 
-    template< class Char_t >
-    Char_t hex_to_num( const Char_t c )
+    template< class Char_type >
+    Char_type hex_to_num( const Char_type c )
     {
         if( ( c >= '0' ) && ( c <= '9' ) ) return c - '0';
         if( ( c >= 'a' ) && ( c <= 'f' ) ) return c - 'a' + 10;
@@ -75,22 +87,22 @@ namespace
         return 0;
     }
 
-    template< class Char_t, class Iter_t >
-    Char_t hex_str_to_char( Iter_t& begin )
+    template< class Char_type, class Iter_type >
+    Char_type hex_str_to_char( Iter_type& begin )
     {
-        const Char_t c1( *( ++begin ) );
-        const Char_t c2( *( ++begin ) );
+        const Char_type c1( *( ++begin ) );
+        const Char_type c2( *( ++begin ) );
 
         return ( hex_to_num( c1 ) << 4 ) + hex_to_num( c2 );
     }       
 
-    template< class Char_t, class Iter_t >
-    Char_t unicode_str_to_char( Iter_t& begin )
+    template< class Char_type, class Iter_type >
+    Char_type unicode_str_to_char( Iter_type& begin )
     {
-        const Char_t c1( *( ++begin ) );
-        const Char_t c2( *( ++begin ) );
-        const Char_t c3( *( ++begin ) );
-        const Char_t c4( *( ++begin ) );
+        const Char_type c1( *( ++begin ) );
+        const Char_type c2( *( ++begin ) );
+        const Char_type c3( *( ++begin ) );
+        const Char_type c4( *( ++begin ) );
 
         return ( hex_to_num( c1 ) << 12 ) + 
                ( hex_to_num( c2 ) <<  8 ) + 
@@ -98,14 +110,14 @@ namespace
                hex_to_num( c4 );
     }
 
-    template< class String_t >
-    void append_esc_char_and_incr_iter( String_t& s, 
-                                        typename String_t::const_iterator& begin, 
-                                        typename String_t::const_iterator end )
+    template< class String_type >
+    void append_esc_char_and_incr_iter( String_type& s, 
+                                        typename String_type::const_iterator& begin, 
+                                        typename String_type::const_iterator end )
     {
-        typedef typename String_t::value_type Char_t;
+        typedef typename String_type::value_type Char_type;
              
-        const Char_t c2( *begin );
+        const Char_type c2( *begin );
 
         switch( c2 )
         {
@@ -121,7 +133,7 @@ namespace
             {
                 if( end - begin >= 3 )  //  expecting "xHH..."
                 {
-                    s += hex_str_to_char< Char_t >( begin );  
+                    s += hex_str_to_char< Char_type >( begin );  
                 }
                 break;
             }
@@ -129,29 +141,29 @@ namespace
             {
                 if( end - begin >= 5 )  //  expecting "uHHHH..."
                 {
-                    s += unicode_str_to_char< Char_t >( begin );  
+                    s += unicode_str_to_char< Char_type >( begin );  
                 }
                 break;
             }
         }
     }
 
-    template< class String_t >
-    String_t substitute_esc_chars( typename String_t::const_iterator begin, 
-                                   typename String_t::const_iterator end )
+    template< class String_type >
+    String_type substitute_esc_chars( typename String_type::const_iterator begin, 
+                                   typename String_type::const_iterator end )
     {
-        typedef typename String_t::const_iterator Iter_t;
+        typedef typename String_type::const_iterator Iter_type;
 
-        if( end - begin < 2 ) return String_t( begin, end );
+        if( end - begin < 2 ) return String_type( begin, end );
 
-        String_t result;
+        String_type result;
         
         result.reserve( end - begin );
 
-        const Iter_t end_minus_1( end - 1 );
+        const Iter_type end_minus_1( end - 1 );
 
-        Iter_t substr_start = begin;
-        Iter_t i = begin;
+        Iter_type substr_start = begin;
+        Iter_type i = begin;
 
         for( ; i < end_minus_1; ++i )
         {
@@ -172,18 +184,18 @@ namespace
         return result;
     }
 
-    template< class String_t >
-    String_t get_str_( typename String_t::const_iterator begin, 
-                       typename String_t::const_iterator end )
+    template< class String_type >
+    String_type get_str_( typename String_type::const_iterator begin, 
+                       typename String_type::const_iterator end )
     {
         assert( end - begin >= 2 );
 
-        typedef typename String_t::const_iterator Iter_t;
+        typedef typename String_type::const_iterator Iter_type;
 
-        Iter_t str_without_quotes( ++begin );
-        Iter_t end_without_quotes( --end );
+        Iter_type str_without_quotes( ++begin );
+        Iter_type end_without_quotes( --end );
 
-        return substitute_esc_chars< String_t >( str_without_quotes, end_without_quotes );
+        return substitute_esc_chars< String_type >( str_without_quotes, end_without_quotes );
     }
 
     string get_str( string::const_iterator begin, string::const_iterator end )
@@ -196,10 +208,10 @@ namespace
         return get_str_< wstring >( begin, end );
     }
     
-    template< class String_t, class Iter_t >
-    String_t get_str( Iter_t begin, Iter_t end )
+    template< class String_type, class Iter_type >
+    String_type get_str( Iter_type begin, Iter_type end )
     {
-        const String_t tmp( begin, end );  // convert multipass iterators to string iterators
+        const String_type tmp( begin, end );  // convert multipass iterators to string iterators
 
         return get_str( tmp.begin(), tmp.end() );
     }
@@ -207,89 +219,94 @@ namespace
     // this class's methods get called by the spirit parse resulting
     // in the creation of a JSON object or array
     //
-    // NB Iter_t could be a std::string iterator, wstring iterator, a position iterator or a multipass iterator
+    // NB Iter_type could be a std::string iterator, wstring iterator, a position iterator or a multipass iterator
     //
-    template< class String_t, class Iter_t >
+    template< class Value_type, class Iter_type >
     class Semantic_actions 
     {
     public:
 
-        typedef Value_impl< String_t >        Value_t;
-        typedef Pair_impl < String_t >        Pair_t;
-        typedef typename Value_t::Object      Object_t;
-        typedef typename Value_t::Array       Array_t;
-        typedef typename String_t::value_type Char_t;
+        typedef typename Value_type::Config_type Config_type;
+        typedef typename Config_type::String_type String_type;
+        typedef typename Config_type::Object_type Object_type;
+        typedef typename Config_type::Array_type Array_type;
+        typedef typename String_type::value_type Char_type;
 
-        Semantic_actions( Value_t& value )
+        Semantic_actions( Value_type& value )
         :   value_( value )
         ,   current_p_( 0 )
         {
         }
 
-        void begin_obj( Char_t c )
+        void begin_obj( Char_type c )
         {
             assert( c == '{' );
 
-            begin_compound< Object_t >();
+            begin_compound< Object_type >();
         }
 
-        void end_obj( Char_t c )
+        void end_obj( Char_type c )
         {
             assert( c == '}' );
 
             end_compound();
         }
 
-        void begin_array( Char_t c )
+        void begin_array( Char_type c )
         {
             assert( c == '[' );
      
-            begin_compound< Array_t >();
+            begin_compound< Array_type >();
        }
 
-        void end_array( Char_t c )
+        void end_array( Char_type c )
         {
             assert( c == ']' );
 
             end_compound();
         }
 
-        void new_name( Iter_t begin, Iter_t end )
+        void new_name( Iter_type begin, Iter_type end )
         {
             assert( current_p_->type() == obj_type );
 
-            name_ = get_str< String_t >( begin, end );
+            name_ = get_str< String_type >( begin, end );
         }
 
-        void new_str( Iter_t begin, Iter_t end )
+        void new_str( Iter_type begin, Iter_type end )
         {
-            add_to_current( get_str< String_t >( begin, end ) );
+            add_to_current( get_str< String_type >( begin, end ) );
         }
 
-        void new_true( Iter_t begin, Iter_t end )
+        void new_true( Iter_type begin, Iter_type end )
         {
             assert( is_eq( begin, end, "true" ) );
 
             add_to_current( true );
         }
 
-        void new_false( Iter_t begin, Iter_t end )
+        void new_false( Iter_type begin, Iter_type end )
         {
             assert( is_eq( begin, end, "false" ) );
 
             add_to_current( false );
         }
 
-        void new_null( Iter_t begin, Iter_t end )
+        void new_null( Iter_type begin, Iter_type end )
         {
             assert( is_eq( begin, end, "null" ) );
 
-            add_to_current( Value_t() );
+            add_to_current( Value_type() );
         }
 
         void new_int( int64_t i )
         {
             add_to_current( i );
+        }
+
+        void new_uint64( uint64_t ui )
+        {
+            add_to_current( ui );
         }
 
         void new_real( double d )
@@ -299,12 +316,13 @@ namespace
 
     private:
 
-        void add_first( const Value_t& value )
+        Value_type* add_first( const Value_type& value )
         {
             assert( current_p_ == 0 );
 
             value_ = value;
             current_p_ = &value_;
+            return current_p_;
         }
 
         template< class Array_or_obj >
@@ -320,16 +338,7 @@ namespace
 
                 Array_or_obj new_array_or_obj;   // avoid copy by building new array or object in place
 
-                add_to_current( new_array_or_obj );
-
-                if( current_p_->type() == array_type )
-                {
-                    current_p_ = &current_p_->get_array().back(); 
-                }
-                else
-                {
-                    current_p_ = &current_p_->get_obj().back().value_; 
-                }
+                current_p_ = add_to_current( new_array_or_obj );
             }
         }
 
@@ -343,82 +352,84 @@ namespace
             }    
         }
 
-        void add_to_current( const Value_t& value )
+        Value_type* add_to_current( const Value_type& value )
         {
             if( current_p_ == 0 )
             {
-                add_first( value );
+                return add_first( value );
             }
             else if( current_p_->type() == array_type )
             {
                 current_p_->get_array().push_back( value );
+
+                return &current_p_->get_array().back(); 
             }
-            else  if( current_p_->type() == obj_type )
-            {
-                current_p_->get_obj().push_back( Pair_t( name_, value ) );
-            }
+            
+            assert( current_p_->type() == obj_type );
+
+            return &Config_type::add( current_p_->get_obj(), name_, value );
         }
 
-        Value_t& value_;             // this is the object or array that is being created
-        Value_t* current_p_;         // the child object or array that is currently being constructed
+        Value_type& value_;             // this is the object or array that is being created
+        Value_type* current_p_;         // the child object or array that is currently being constructed
 
-        vector< Value_t* > stack_;   // previous child objects and arrays
+        vector< Value_type* > stack_;   // previous child objects and arrays
 
-        String_t name_;              // of current name/value pair
+        String_type name_;              // of current name/value pair
     };
 
-    template< typename Iter_t >
-    void throw_error( position_iterator< Iter_t > i, const std::string& reason )
+    template< typename Iter_type >
+    void throw_error( position_iterator< Iter_type > i, const std::string& reason )
     {
         throw Error_position( i.get_position().line, i.get_position().column, reason );
     }
 
-    template< typename Iter_t >
-    void throw_error( Iter_t i, const std::string& reason )
+    template< typename Iter_type >
+    void throw_error( Iter_type i, const std::string& reason )
     {
        throw reason;
     }
 
     // the spirit grammer 
     //
-    template< class String_t, class Iter_t >
-    class Json_grammer : public grammar< Json_grammer< String_t, Iter_t > >
+    template< class Value_type, class Iter_type >
+    class Json_grammer : public grammar< Json_grammer< Value_type, Iter_type > >
     {
     public:
 
-        typedef Semantic_actions< String_t, Iter_t > Semantic_actions_t;
+        typedef Semantic_actions< Value_type, Iter_type > Semantic_actions_t;
 
         Json_grammer( Semantic_actions_t& semantic_actions )
         :   actions_( semantic_actions )
         {
         }
 
-        static void throw_not_value( Iter_t begin, Iter_t end )
+        static void throw_not_value( Iter_type begin, Iter_type end )
         {
     	    throw_error( begin, "not a value" );
         }
 
-        static void throw_not_array( Iter_t begin, Iter_t end )
+        static void throw_not_array( Iter_type begin, Iter_type end )
         {
     	    throw_error( begin, "not an array" );
         }
 
-        static void throw_not_object( Iter_t begin, Iter_t end )
+        static void throw_not_object( Iter_type begin, Iter_type end )
         {
     	    throw_error( begin, "not an object" );
         }
 
-        static void throw_not_pair( Iter_t begin, Iter_t end )
+        static void throw_not_pair( Iter_type begin, Iter_type end )
         {
     	    throw_error( begin, "not a pair" );
         }
 
-        static void throw_not_colon( Iter_t begin, Iter_t end )
+        static void throw_not_colon( Iter_type begin, Iter_type end )
         {
     	    throw_error( begin, "no colon in pair" );
         }
 
-        static void throw_not_string( Iter_t begin, Iter_t end )
+        static void throw_not_string( Iter_type begin, Iter_type end )
         {
     	    throw_error( begin, "not a string" );
         }
@@ -428,27 +439,29 @@ namespace
         {
             definition( const Json_grammer& self )
             {
-                typedef typename String_t::value_type Char_t;
+                typedef typename Value_type::String_type::value_type Char_type;
 
                 // first we convert the semantic action class methods to functors with the 
                 // parameter signature expected by spirit
 
-                typedef function< void( Char_t )         > Char_action;
-                typedef function< void( Iter_t, Iter_t ) > Str_action;
-                typedef function< void( double )         > Real_action;
-                typedef function< void( int64_t )        > Int_action;
+                typedef function< void( Char_type )            > Char_action;
+                typedef function< void( Iter_type, Iter_type ) > Str_action;
+                typedef function< void( double )               > Real_action;
+                typedef function< void( int64_t )              > Int_action;
+                typedef function< void( uint64_t )             > Uint64_action;
 
-                Char_action begin_obj  ( bind( &Semantic_actions_t::begin_obj,   &self.actions_, _1 ) );
-                Char_action end_obj    ( bind( &Semantic_actions_t::end_obj,     &self.actions_, _1 ) );
-                Char_action begin_array( bind( &Semantic_actions_t::begin_array, &self.actions_, _1 ) );
-                Char_action end_array  ( bind( &Semantic_actions_t::end_array,   &self.actions_, _1 ) );
-                Str_action  new_name   ( bind( &Semantic_actions_t::new_name,    &self.actions_, _1, _2 ) );
-                Str_action  new_str    ( bind( &Semantic_actions_t::new_str,     &self.actions_, _1, _2 ) );
-                Str_action  new_true   ( bind( &Semantic_actions_t::new_true,    &self.actions_, _1, _2 ) );
-                Str_action  new_false  ( bind( &Semantic_actions_t::new_false,   &self.actions_, _1, _2 ) );
-                Str_action  new_null   ( bind( &Semantic_actions_t::new_null,    &self.actions_, _1, _2 ) );
-                Real_action new_real   ( bind( &Semantic_actions_t::new_real,    &self.actions_, _1 ) );
-                Int_action  new_int    ( bind( &Semantic_actions_t::new_int,     &self.actions_, _1 ) );
+                Char_action   begin_obj  ( bind( &Semantic_actions_t::begin_obj,   &self.actions_, _1 ) );
+                Char_action   end_obj    ( bind( &Semantic_actions_t::end_obj,     &self.actions_, _1 ) );
+                Char_action   begin_array( bind( &Semantic_actions_t::begin_array, &self.actions_, _1 ) );
+                Char_action   end_array  ( bind( &Semantic_actions_t::end_array,   &self.actions_, _1 ) );
+                Str_action    new_name   ( bind( &Semantic_actions_t::new_name,    &self.actions_, _1, _2 ) );
+                Str_action    new_str    ( bind( &Semantic_actions_t::new_str,     &self.actions_, _1, _2 ) );
+                Str_action    new_true   ( bind( &Semantic_actions_t::new_true,    &self.actions_, _1, _2 ) );
+                Str_action    new_false  ( bind( &Semantic_actions_t::new_false,   &self.actions_, _1, _2 ) );
+                Str_action    new_null   ( bind( &Semantic_actions_t::new_null,    &self.actions_, _1, _2 ) );
+                Real_action   new_real   ( bind( &Semantic_actions_t::new_real,    &self.actions_, _1 ) );
+                Int_action    new_int    ( bind( &Semantic_actions_t::new_int,     &self.actions_, _1 ) );
+                Uint64_action new_uint64 ( bind( &Semantic_actions_t::new_uint64,  &self.actions_, _1 ) );
 
                 // actual grammer
 
@@ -505,8 +518,9 @@ namespace
                     ;
 
                 number_
-                    = strict_real_p[ new_real ] 
-                    | int64_p      [ new_int  ]
+                    = strict_real_p[ new_real   ] 
+                    | int64_p      [ new_int    ]
+                    | uint64_p     [ new_uint64 ]
                     ;
             }
 
@@ -518,16 +532,14 @@ namespace
         Semantic_actions_t& actions_;
     };
 
-    template< class Iter_t, class Value_t >
-    Iter_t read_range_or_throw( Iter_t begin, Iter_t end, Value_t& value )
+    template< class Iter_type, class Value_type >
+    Iter_type read_range_or_throw( Iter_type begin, Iter_type end, Value_type& value )
     {
-        typedef typename Value_t::String_type String_t;
-
-        Semantic_actions< String_t, Iter_t > semantic_actions( value );
+        Semantic_actions< Value_type, Iter_type > semantic_actions( value );
      
-        const parse_info< Iter_t > info = parse( begin, end, 
-                                                 Json_grammer< String_t, Iter_t >( semantic_actions ), 
-                                                 space_p );
+        const parse_info< Iter_type > info = parse( begin, end, 
+                                                    Json_grammer< Value_type, Iter_type >( semantic_actions ), 
+                                                    space_p );
 
         if( !info.hit )
         {
@@ -538,10 +550,10 @@ namespace
         return info.stop;
     }
 
-    template< class Iter_t, class Value_t >
-    void add_posn_iter_and_read_range_or_throw( Iter_t begin, Iter_t end, Value_t& value )
+    template< class Iter_type, class Value_type >
+    void add_posn_iter_and_read_range_or_throw( Iter_type begin, Iter_type end, Value_type& value )
     {
-        typedef position_iterator< Iter_t > Posn_iter_t;
+        typedef position_iterator< Iter_type > Posn_iter_t;
 
         const Posn_iter_t posn_begin( begin, end );
         const Posn_iter_t posn_end( end, end );
@@ -549,8 +561,8 @@ namespace
         read_range_or_throw( posn_begin, posn_end, value );
     }
 
-    template< class Iter_t, class Value_t >
-    bool read_range( Iter_t& begin, Iter_t end, Value_t& value )
+    template< class Iter_type, class Value_type >
+    bool read_range( Iter_type& begin, Iter_type end, Value_type& value )
     {
         try
         {
@@ -564,28 +576,28 @@ namespace
         }
     }
 
-    template< class String_t, class Value_t >
-    void read_string_or_throw( const String_t& s, Value_t& value )
+    template< class String_type, class Value_type >
+    void read_string_or_throw( const String_type& s, Value_type& value )
     {
         add_posn_iter_and_read_range_or_throw( s.begin(), s.end(), value );
     }
 
-    template< class String_t, class Value_t >
-    bool read_string( const String_t& s, Value_t& value )
+    template< class String_type, class Value_type >
+    bool read_string( const String_type& s, Value_type& value )
     {
-        typename String_t::const_iterator begin = s.begin();
+        typename String_type::const_iterator begin = s.begin();
 
         return read_range( begin, s.end(), value );
     }
 
-    template< class Istream_t >
+    template< class Istream_type >
     struct Multi_pass_iters
     {
-        typedef typename Istream_t::char_type Char_t;
-        typedef istream_iterator< Char_t, Char_t > istream_iter;
+        typedef typename Istream_type::char_type Char_type;
+        typedef istream_iterator< Char_type, Char_type > istream_iter;
         typedef multi_pass< istream_iter > multi_pass_iter;
 
-        Multi_pass_iters( Istream_t& is )
+        Multi_pass_iters( Istream_type& is )
         {
             is.unsetf( ios::skipws );
 
@@ -597,18 +609,18 @@ namespace
         multi_pass_iter end_;
     };
 
-    template< class Istream_t, class Value_t >
-    bool read_stream( Istream_t& is, Value_t& value )
+    template< class Istream_type, class Value_type >
+    bool read_stream( Istream_type& is, Value_type& value )
     {
-        Multi_pass_iters< Istream_t > mp_iters( is );
+        Multi_pass_iters< Istream_type > mp_iters( is );
 
         return read_range( mp_iters.begin_, mp_iters.end_, value );
     }
 
-    template< class Istream_t, class Value_t >
-    void read_stream_or_throw( Istream_t& is, Value_t& value )
+    template< class Istream_type, class Value_type >
+    void read_stream_or_throw( Istream_type& is, Value_type& value )
     {
-        const Multi_pass_iters< Istream_t > mp_iters( is );
+        const Multi_pass_iters< Istream_type > mp_iters( is );
 
         add_posn_iter_and_read_range_or_throw( mp_iters.begin_, mp_iters.end_, value );
     }
@@ -675,4 +687,69 @@ void json_spirit::read_or_throw( std::wstring::const_iterator& begin, std::wstri
 {
     begin = read_range_or_throw( begin, end, value );
 }
+
+#endif
+
+bool json_spirit::read( const std::string& s, mValue& value )
+{
+    return read_string( s, value );
+}
+
+void json_spirit::read_or_throw( const std::string& s, mValue& value )
+{
+    read_string_or_throw( s, value );
+}
+
+bool json_spirit::read( std::istream& is, mValue& value )
+{
+    return read_stream( is, value );
+}
+
+void json_spirit::read_or_throw( std::istream& is, mValue& value )
+{
+    read_stream_or_throw( is, value );
+}
+
+bool json_spirit::read( std::string::const_iterator& begin, std::string::const_iterator end, mValue& value )
+{
+    return read_range( begin, end, value );
+}
+
+void json_spirit::read_or_throw( std::string::const_iterator& begin, std::string::const_iterator end, mValue& value )
+{
+    begin = read_range_or_throw( begin, end, value );
+}
+
+#ifndef BOOST_NO_STD_WSTRING
+
+bool json_spirit::read( const std::wstring& s, wmValue& value )
+{
+    return read_string( s, value );
+}
+
+void json_spirit::read_or_throw( const std::wstring& s, wmValue& value )
+{
+    read_string_or_throw( s, value );
+}
+
+bool json_spirit::read( std::wistream& is, wmValue& value )
+{
+    return read_stream( is, value );
+}
+
+void json_spirit::read_or_throw( std::wistream& is, wmValue& value )
+{
+    read_stream_or_throw( is, value );
+}
+
+bool json_spirit::read( std::wstring::const_iterator& begin, std::wstring::const_iterator end, wmValue& value )
+{
+    return read_range( begin, end, value );
+}
+
+void json_spirit::read_or_throw( std::wstring::const_iterator& begin, std::wstring::const_iterator end, wmValue& value )
+{
+    begin = read_range_or_throw( begin, end, value );
+}
+
 #endif

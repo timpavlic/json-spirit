@@ -3,16 +3,18 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 3.01
+// json spirit version 4.00
 
 #include "json_spirit_value_test.h"
 #include "json_spirit_value.h"
 #include "utils_test.h"
+#include <limits.h>
 
 #include <boost/assign/list_of.hpp>
 
 using namespace json_spirit;
 using namespace std;
+using namespace boost;
 using namespace boost::assign;
 
 namespace
@@ -80,14 +82,39 @@ namespace
         assert_eq ( v1, v2 );
         assert_neq( v1, v3 );
 
-        assert_eq( v1.get_int(), 1 );
-        assert_eq( v3.get_int(), INT_MAX );
-        assert_eq( v1.get_int64(), 1 );
-        assert_eq( v3.get_int64(), INT_MAX );
+        assert_eq( v1.get_int(),    1 );
+        assert_eq( v1.get_int64(),  1 );
+        assert_eq( v1.get_uint64(), 1 );
+        assert_eq( v3.get_int(),    INT_MAX );
+        assert_eq( v3.get_int64(),  INT_MAX );
+        assert_eq( v3.get_uint64(), INT_MAX );
 
         Value v4( LLONG_MAX );
 
         assert_eq( v4.get_int64(), LLONG_MAX );
+        assert_eq( v4.get_uint64(), static_cast< uint64_t >( LLONG_MAX ) );
+
+        const uint64_t llong_max_plus_1 = LLONG_MAX + uint64_t( 1 );
+
+        Value v5( llong_max_plus_1 );
+
+        assert_eq( v5.get_uint64(), llong_max_plus_1 );
+
+        Value v6( ULLONG_MAX );
+
+        assert_eq( v6.get_uint64(), ULLONG_MAX );
+
+        Value v7( 0 );
+
+        assert_eq( v7.get_int(),    0 );
+        assert_eq( v7.get_int64(),  0 );
+        assert_eq( v7.get_uint64(), 0 );
+
+        Value v8( -1 );
+
+        assert_eq( v8.get_int(),   -1 );
+        assert_eq( v8.get_int64(), -1 );
+        assert_eq( v8.get_uint64(), ULLONG_MAX );
     }
 
     void test_real_value()
@@ -110,7 +137,10 @@ namespace
         Value v2;
 
         assert_eq( v1.type(), null_type );
-        assert_eq ( v1, v2 );
+        assert_eq( v1.is_null(), true );
+        assert_eq( v1, v2 );
+        assert_eq( v1.is_null(), true );
+        assert_eq( Value( 1 ).is_null(), false );
     }
 
     template< typename T >
@@ -155,8 +185,14 @@ namespace
         Value v3;
         v3 = v1;
     
+        assert_eq( v1, v2 );
+        assert_eq( v1, v3 );
+    
         assert_eq( v2.get_value< T >(), t );
         assert_eq( v3.get_value< T >(), t );
+
+        assert_eq( v1.is_uint64(), v2.is_uint64() );
+        assert_eq( v1.is_uint64(), v3.is_uint64() );
     }
 
     void check_copying_null()
@@ -205,6 +241,8 @@ namespace
         {
             check_copy( 1 );
             check_copy( 2.0 );
+            check_copy( LLONG_MAX );
+            check_copy( ULLONG_MAX );
             check_copy( string("test") );
             check_copy( true );
             check_copy( false );
@@ -231,6 +269,47 @@ namespace
         wObject wo;
         check_pair_typedefs( wo );
 #endif
+    }
+
+    void test_obj_map_implemention()
+    {
+        mObject obj;
+
+        obj[ "name 1" ] = 1;
+        obj[ "name 2" ] = "two";
+
+        assert_eq( obj.size(), 2u );
+
+        assert_eq( obj.find( "name 1" )->second.get_int(), 1 );
+        assert_eq( obj.find( "name 2" )->second.get_str(), "two" );
+    }
+
+    template< typename Int >
+    void check_an_int_is_a_real( Int i, bool expected_result )
+    {
+        assert_eq( Value( i ).is_uint64(), expected_result );
+    }
+
+    void test_is_uint64()
+    {
+        check_an_int_is_a_real( 1,                            false );
+        check_an_int_is_a_real( static_cast< int64_t  >( 1 ), false );
+        check_an_int_is_a_real( static_cast< uint64_t >( 1 ), true );
+    }
+
+    template< typename Int >
+    void check_an_int_is_a_real( Int i, double expected_result )
+    {
+        assert_eq( Value( i ).get_real(), expected_result );
+    }
+
+    void test_an_int_is_a_real()
+    {
+        check_an_int_is_a_real( -1, -1.0 );
+        check_an_int_is_a_real(  0,  0.0 );
+        check_an_int_is_a_real(  1,  1.0 );
+        check_an_int_is_a_real( LLONG_MAX,  9223372036854775800.0 );
+        check_an_int_is_a_real( ULLONG_MAX, 18446744073709552000.0 );
     }
 }
 
@@ -274,4 +353,7 @@ void json_spirit::test_value()
     test_null_value();
     test_get_value();
     test_copying();
+    test_obj_map_implemention();
+    test_is_uint64();
+    test_an_int_is_a_real();
 }

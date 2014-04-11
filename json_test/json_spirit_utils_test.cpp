@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 3.01
+// json spirit version 4.00
 
 #include "json_spirit_utils_test.h"
 #include "json_spirit_utils.h"
@@ -20,13 +20,13 @@ namespace
     template< class Obj_t, class Map_t >
     struct Test_runner
     {
-        typedef typename Map_t::key_type    String_t;
-        typedef typename Obj_t::value_type  Pair_t;
-        typedef typename Pair_t::Value_type Value_t;
+        typedef typename Map_t::key_type    String_type;
+        typedef typename Obj_t::value_type  Pair_type;
+        typedef typename Pair_type::Value_type Value_type;
 
-        String_t to_str( const char* c_str )
+        String_type to_str( const char* c_str )
         {
-            return ::to_str< String_t >( c_str );
+            return ::to_str< String_type >( c_str );
         }
  
         void assert_equal( const Obj_t& obj, const Map_t& mp_obj )
@@ -75,7 +75,7 @@ namespace
         {
             Obj_t obj;
 
-            obj.push_back( Pair_t( to_str( "del" ), to_str( "me" ) ) );
+            obj.push_back( Pair_type( to_str( "del" ), to_str( "me" ) ) );
 
             map_to_obj( Map_t(), obj );
 
@@ -85,9 +85,9 @@ namespace
         void test_obj_to_map()
         {
             check_obj_to_map( Obj_t() );
-            check_obj_to_map( list_of( Pair_t( to_str( "a" ), 1 ) ) );
-            check_obj_to_map( list_of( Pair_t( to_str( "a" ), 1 ) )( Pair_t( to_str( "b" ), 2 ) ) );
-            check_obj_to_map( list_of( Pair_t( to_str( "a" ), 1 ) )( Pair_t( to_str( "b" ), 2 ) )( Pair_t( to_str( "c" ), 3 ) ) );
+            check_obj_to_map( list_of( Pair_type( to_str( "a" ), 1 ) ) );
+            check_obj_to_map( list_of( Pair_type( to_str( "a" ), 1 ) )( Pair_type( to_str( "b" ), 2 ) ) );
+            check_obj_to_map( list_of( Pair_type( to_str( "a" ), 1 ) )( Pair_type( to_str( "b" ), 2 ) )( Pair_type( to_str( "c" ), 3 ) ) );
             check_map_cleared();
 
             check_map_to_obj( Map_t() );
@@ -97,28 +97,28 @@ namespace
             check_obj_cleared();
         }
 
-        void check_find( const Obj_t& obj, const char* name, const Value_t& expected_result )
+        void check_find( const Obj_t& obj, const char* name, const Value_type& expected_result )
         {
-            const Value_t& result = find_value( obj, to_str( name ) );
+            const Value_type& result = find_value( obj, to_str( name ) );
 
             assert_eq( result, expected_result );
         }
 
         void test_find()
         {
-            check_find( Obj_t(), "not there", Value_t::null );
+            check_find( Obj_t(), "not there", Value_type::null );
 
-            const Obj_t obj_1 = list_of( Pair_t( to_str( "a" ), 1 ) );
+            const Obj_t obj_1 = list_of( Pair_type( to_str( "a" ), 1 ) );
 
-            check_find( obj_1, "not there", Value_t::null );
+            check_find( obj_1, "not there", Value_type::null );
             check_find( obj_1, "a", 1 );
 
-            const Obj_t obj_2 = list_of( Pair_t( to_str( "a" ), 1 ) )( Pair_t( to_str( "ab" ), 2 ) );
+            const Obj_t obj_2 = list_of( Pair_type( to_str( "a" ), 1 ) )( Pair_type( to_str( "ab" ), 2 ) );
 
             check_find( obj_2, "a", 1 );
             check_find( obj_2, "ab", 2 );
 
-            const Obj_t obj_3 = list_of( Pair_t( to_str( "a" ), 1 ) )( Pair_t( to_str( "ab" ), 2 ) )( Pair_t( to_str( "abc" ), 3 ) );
+            const Obj_t obj_3 = list_of( Pair_type( to_str( "a" ), 1 ) )( Pair_type( to_str( "ab" ), 2 ) )( Pair_type( to_str( "abc" ), 3 ) );
 
             check_find( obj_3, "a", 1 );
             check_find( obj_3, "ab", 2 );

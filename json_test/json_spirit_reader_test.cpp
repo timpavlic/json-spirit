@@ -3,7 +3,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 3.01
+// json spirit version 4.00
 
 #include "json_spirit_reader_test.h"
 #include "json_spirit_reader.h"
@@ -24,70 +24,72 @@ using namespace boost::assign;
 
 namespace
 {
-    template< class String_t, class Value_t >
-    void test_read( const String_t& s, Value_t& value )
+    template< class String_type, class Value_type >
+    void test_read( const String_type& s, Value_type& value )
     {
         // performs both types of read and checks they produce the same value
 
         read( s, value );
 
-        Value_t value_2;
+        Value_type value_2;
 
         read_or_throw( s, value_2 );
 
         assert_eq( value, value_2 );
     }
 
-    template< class Value_t >
+    template< class Config_type >
     struct Test_runner
     {
-        typedef typename Value_t::String_type      String_t;
-        typedef typename Value_t::Object           Object_t;
-        typedef typename Value_t::Array            Array_t;
-        typedef typename String_t::value_type      Char_t;
-        typedef typename String_t::const_iterator  Iter_t;
-        typedef Pair_impl< String_t >              Pair_t;
-        typedef std::basic_istringstream< Char_t > Istringstream_t;
-        typedef std::basic_istream< Char_t >       Istream_t;
+        typedef typename Config_type::String_type String_type;
+        typedef typename Config_type::Object_type Object_type;
+        typedef typename Config_type::Array_type Array_type;
+        typedef typename Config_type::Value_type Value_type;
+        typedef typename Config_type::Pair_type Pair_type;
+        typedef typename String_type::value_type  Char_type;
+        typedef typename String_type::const_iterator Iter_type;
+        typedef std::basic_istringstream< Char_type > Istringstream_type;
+        typedef std::basic_istream< Char_type > Istream_type;
 
-        String_t to_str( const char* c_str )
+        String_type to_str( const char* c_str )
         {
-            return ::to_str< String_t >( c_str );
+            return ::to_str< String_type >( c_str );
         }
-
-        Pair_t make_pair( const char* c_name, const char* c_value )
-        {
-            return Pair_t( to_str( c_name ), to_str( c_value ) );
-        }
-
-        Pair_t p1;
-        Pair_t p2;
-        Pair_t p3;
 
         Test_runner()
-        :   p1( make_pair("name 1", "value 1") )
-        ,   p2( make_pair("name 2", "value 2") )
-        ,   p3( make_pair("name 3", "value 3") )
         {
         }
 
-        void check_eq( const Object_t& obj_1, const Object_t& obj_2 )
+        void check_eq( const Object_type& obj_1, const Object_type& obj_2 )
         {
-            const typename Object_t::size_type size( obj_1.size() );
+            const typename Object_type::size_type size( obj_1.size() );
 
             assert_eq( size, obj_2.size() );
 
-            for( typename Object_t::size_type i = 0; i < size; ++i )
+            typename Object_type::const_iterator i1 = obj_1.begin();
+            typename Object_type::const_iterator i2 = obj_2.begin();
+
+            for( ; i1 != obj_1.end(); ++i1, ++i2 )
             {
-                assert_eq( obj_1[i], obj_2[i] ); 
+                assert_eq( *i1, *i2 ); 
             }
+        }
+
+        void add_value( Object_type& obj, const char* c_name, const Value_type& value )
+        {
+            Config_type::add( obj, to_str( c_name ), value );
+        }
+
+        void add_c_str( Object_type& obj, const char* c_name, const char* c_value )
+        {
+            add_value( obj, c_name, to_str( c_value ) );
         }
 
         void test_syntax( const char* c_str, bool expected_success = true )
         {
-            const String_t str = to_str( c_str );
+            const String_type str = to_str( c_str );
 
-            Value_t value;
+            Value_type value;
 
             const bool ok = read( str, value );
 
@@ -159,29 +161,29 @@ namespace
             test_syntax( "[1 2 3]", false );
         }
 
-        Value_t read_cstr( const char* c_str )
+        Value_type read_cstr( const char* c_str )
         {
-            Value_t value;
+            Value_type value;
 
             test_read( to_str( c_str ), value );
 
             return value;
         }
 
-        void read_cstr( const char* c_str, Value_t& value )
+        void read_cstr( const char* c_str, Value_type& value )
         {
             test_read( to_str( c_str ), value );
         }
 
         void check_reading( const char* c_str )
         {
-            Value_t value;
+            Value_type value;
 
-            String_t in_s( to_str( c_str ) );
+            String_type in_s( to_str( c_str ) );
 
             test_read( in_s, value );
 
-            const String_t result = write_formatted( value ); 
+            const String_type result = write_formatted( value ); 
 
             assert_eq( in_s, result );
         }
@@ -203,17 +205,22 @@ namespace
         {
             check_reading( "{\n}" );
 
-            Value_t value;
+            Object_type obj;
+            Value_type value;
 
             read_cstr( "{\n"
                        "    \"name 1\" : \"value 1\"\n"
                        "}", value );
 
-            check_eq( value.get_obj(), list_of( p1 ) );
+            add_c_str( obj, "name 1", "value 1" );
+
+            check_eq( value.get_obj(), obj );
 
             read_cstr( "{\"name 1\":\"value 1\",\"name 2\":\"value 2\"}", value );
 
-            check_eq( value.get_obj(), list_of( p1 )( p2 ) );
+            add_c_str( obj, "name 2", "value 2" );
+
+            check_eq( value.get_obj(), obj );
 
             read_cstr( "{\n"
                        "    \"name 1\" : \"value 1\",\n"
@@ -221,14 +228,14 @@ namespace
                        "    \"name 3\" : \"value 3\"\n"
                        "}", value );
 
-            check_eq( value.get_obj(), list_of( p1 )( p2 )( p3 ) );
+            add_c_str( obj, "name 3", "value 3" );
 
-            read_cstr( "{\n"
-                       "    \"\" : \"value\",\n"
-                       "    \"name\" : \"\"\n"
-                       "}", value );
+            check_eq( value.get_obj(), obj );
 
-            check_eq( value.get_obj(), list_of( make_pair( "", "value" ) )( make_pair( "name", "" ) ) );
+            check_reading( "{\n"
+                            "    \"\" : \"value\",\n"
+                            "    \"name\" : \"\"\n"
+                            "}" );
 
             check_reading( "{\n"
                             "    \"name 1\" : \"value 1\",\n"
@@ -426,11 +433,11 @@ namespace
         void test_from_stream( const char* json_str, bool expected_success,
                                const Error_position& expected_error )
         {
-            Value_t value;
+            Value_type value;
 
-            String_t in_s( to_str( json_str ) );
+            String_type in_s( to_str( json_str ) );
 
-            basic_istringstream< Char_t > is( in_s );
+            basic_istringstream< Char_type > is( in_s );
 
             const bool ok = read( is, value );
 
@@ -443,7 +450,7 @@ namespace
 
             try
             {
-                basic_istringstream< Char_t > is( in_s );
+                basic_istringstream< Char_type > is( in_s );
 
                 read_or_throw( is, value );
 
@@ -465,16 +472,16 @@ namespace
 
         void test_escape_chars( const char* json_str, const char* c_str )
         {
-            Value_t value;
+            Value_type value;
 
             string s( string( "{\"" ) + json_str + "\" : \"" + json_str + "\"} " );
 
             read_cstr( s.c_str(), value );
 
-            const Pair_t& pair( value.get_obj()[0] );
+            const Pair_type& pair( *value.get_obj().begin() );
 
-            assert_eq( pair.name_,  to_str( c_str ) );
-            assert_eq( pair.value_, to_str( c_str ) );
+            assert_eq( Config_type::get_name ( pair ), to_str( c_str ) );
+            assert_eq( Config_type::get_value( pair ), to_str( c_str ) );
         }
 
         void test_escape_chars()
@@ -502,7 +509,7 @@ namespace
         template< typename T >
         void check_value( const char* c_str, const T& expected_value )
         {
-            const Value_t v( read_cstr( c_str ) );
+            const Value_type v( read_cstr( c_str ) );
             
             assert_eq( v.template get_value< T >(), expected_value ); 
         }
@@ -519,7 +526,7 @@ namespace
 
         void check_read_fails( const char* c_str, int line, int column, const string& reason )
         {
-            Value_t value;
+            Value_type value;
 
             try
             {
@@ -559,15 +566,15 @@ namespace
 
         typedef vector< int > Ints;
 
-        bool test_read_range( Iter_t& first, Iter_t last, Value_t& value )
+        bool test_read_range( Iter_type& first, Iter_type last, Value_type& value )
         {
-            Iter_t first_ = first;
+            Iter_type first_ = first;
 
             const bool ok = read( first, last, value );
 
             try
             {
-                Value_t value_;
+                Value_type value_;
 
                 read_or_throw( first_, last, value_ );
 
@@ -582,9 +589,9 @@ namespace
             return ok;
         }
 
-        void check_value_sequence( Iter_t first, Iter_t last, const Ints& expected_values, bool all_input_consumed )
+        void check_value_sequence( Iter_type first, Iter_type last, const Ints& expected_values, bool all_input_consumed )
         {
-            Value_t value;
+            Value_type value;
             
             for( Ints::size_type i = 0; i < expected_values.size(); ++i )
             {
@@ -602,9 +609,9 @@ namespace
             assert_eq( ok, false );
         }
 
-        void check_value_sequence( Istream_t& is, const Ints& expected_values, bool all_input_consumed )
+        void check_value_sequence( Istream_type& is, const Ints& expected_values, bool all_input_consumed )
         {
-            Value_t value;
+            Value_type value;
             
             for( Ints::size_type i = 0; i < expected_values.size(); ++i )
             {
@@ -632,44 +639,44 @@ namespace
 
         void check_value_sequence( const char* c_str, const Ints& expected_values, bool all_input_consumed )
         {
-            const String_t s( to_str( c_str ) );
+            const String_type s( to_str( c_str ) );
 
             check_value_sequence( s.begin(), s.end(), expected_values, all_input_consumed );
 
-            Istringstream_t is( s );
+            Istringstream_type is( s );
 
             check_value_sequence( is, expected_values, all_input_consumed );
         }
 
-        void check_array( const Value_t& value, typename Array_t::size_type expected_size )
+        void check_array( const Value_type& value, typename Array_type::size_type expected_size )
         {
             assert_eq( value.type(), array_type );
 
-            const Array_t& arr = value.get_array();
+            const Array_type& arr = value.get_array();
 
             assert_eq( arr.size(), expected_size );
 
-            for( typename Array_t::size_type i = 0; i < expected_size; ++i )
+            for( typename Array_type::size_type i = 0; i < expected_size; ++i )
             {
-                const Value_t& val = arr[i];
+                const Value_type& val = arr[i];
 
                 assert_eq( val.type(), int_type );
                 assert_eq( val.get_int(), int( i + 1 ) );
             }
         }
 
-        void check_reading_array( Iter_t& begin, Iter_t end, typename Array_t::size_type expected_size )
+        void check_reading_array( Iter_type& begin, Iter_type end, typename Array_type::size_type expected_size )
         {
-            Value_t value;
+            Value_type value;
 
             test_read_range( begin, end, value );
 
             check_array( value, expected_size );
         }
 
-        void check_reading_array( Istream_t& is, typename Array_t::size_type expected_size )
+        void check_reading_array( Istream_type& is, typename Array_type::size_type expected_size )
         {
-            Value_t value;
+            Value_type value;
 
             read( is, value );
 
@@ -688,23 +695,60 @@ namespace
 
             // 
 
-            const String_t str( to_str( "[] [ 1 ] [ 1, 2 ]  [ 1, 2, 3 ]" ) );
+            const String_type str( to_str( "[] [ 1 ] [ 1, 2 ]  [ 1, 2, 3 ]" ) );
 
-            Iter_t       begin = str.begin();
-            const Iter_t end   = str.end();
+            Iter_type       begin = str.begin();
+            const Iter_type end   = str.end();
 
             check_reading_array( begin, end, 0 );
             check_reading_array( begin, end, 1 );
             check_reading_array( begin, end, 2 );
             check_reading_array( begin, end, 3 );
 
-            Istringstream_t is( str );
+            Istringstream_type is( str );
 
             check_reading_array( is, 0 );
             check_reading_array( is, 1 );
             check_reading_array( is, 2 );
             check_reading_array( is, 3 );
+        }
 
+        void test_uint64( const char* value_str, int expected_int, int64_t expected_int64, uint64_t expected_uint64 )
+        {
+            const Value_type v( read_cstr( value_str ) );
+            
+            assert_eq( v.get_int(),    expected_int ); 
+            assert_eq( v.get_int64(),  expected_int64 ); 
+            assert_eq( v.get_uint64(), expected_uint64 ); 
+        } 
+
+        void test_uint64()
+        {
+            test_uint64( "0", 0, 0, 0 );
+            test_uint64( "1", 1, 1, 1 );
+            test_uint64( "-1", -1, -1, ULLONG_MAX );
+            test_uint64( "18446744073709551615", -1, -1, ULLONG_MAX );
+        }
+
+        void test_types()
+        {
+            Value_type value;
+
+            read( to_str( "[ \"foo\", true, false, 1, 12.3, null ]" ), value );
+
+            assert_eq( value.type(), array_type );
+
+            const Array_type& a = value.get_array();
+
+            assert_eq( a[0].get_str(), to_str( "foo" ) );
+            assert_eq( a[1].get_bool(), true );
+            assert_eq( a[2].get_bool(), false );
+            assert_eq( a[3].get_int(), 1 );
+            assert_eq( a[3].get_int64(), 1 );
+            assert_eq( a[3].get_uint64(), 1 );
+            assert_eq( a[3].get_real(), 1.0 );
+            assert_eq( a[4].get_real(), 12.3 );
+            assert_eq( a[5].is_null(), true );
         }
 
         void run_tests()
@@ -716,6 +760,8 @@ namespace
             test_values();
             test_error_cases();
             test_sequence_of_values();
+            test_uint64();
+            test_types();
         }
     };
 
@@ -749,14 +795,16 @@ namespace
     }
 }
 
-#include <fstream>
+//#include <fstream>
 
 void json_spirit::test_reader()
 {
-    Test_runner< Value >().run_tests();
+    Test_runner< Config  >().run_tests();
+    Test_runner< mConfig >().run_tests();
 
 #ifndef BOOST_NO_STD_WSTRING
-    Test_runner< wValue >().run_tests();
+    Test_runner< wConfig  >().run_tests();
+    Test_runner< wmConfig >().run_tests();
     test_wide_esc_u();
 #endif
 

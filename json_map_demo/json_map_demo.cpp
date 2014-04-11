@@ -30,62 +30,45 @@ bool operator==( const Address& a1, const Address& a2 )
            ( a1.country_      == a2.country_ );
 }
 
-void write_address( Array& a, const Address& addr )
+void write_address( mArray& a, const Address& addr )
 {
-    Object addr_obj;
+    mObject addr_obj;
 
-    addr_obj.push_back( Pair( "house_number", addr.house_number_ ) );
-    addr_obj.push_back( Pair( "road",         addr.road_ ) );
-    addr_obj.push_back( Pair( "town",         addr.town_ ) );
-    addr_obj.push_back( Pair( "county",       addr.county_ ) );
-    addr_obj.push_back( Pair( "country",      addr.country_ ) );
+    addr_obj[ "house_number" ] = addr.house_number_;
+    addr_obj[ "road"         ] = addr.road_;
+    addr_obj[ "town"         ] = addr.town_;
+    addr_obj[ "county"       ] = addr.county_;
+    addr_obj[ "country"      ] = addr.country_;
 
     a.push_back( addr_obj );
 }
 
-Address read_address( const Object& obj )
+const mValue& find_value( const mObject& obj, const string& name  )
+{
+    mObject::const_iterator i = obj.find( name );
+
+    assert( i != obj.end() );
+    assert( i->first == name );
+
+    return i->second;
+}
+
+Address read_address( const mObject& obj )
 {
     Address addr;
 
-    for( int i = 0; i != obj.size(); ++i )
-    {
-        const Pair& pair = obj[i];
-
-        const string& name  = pair.name_;
-        const Value&  value = pair.value_;
-
-        if( name == "house_number" )
-        {
-            addr.house_number_ = value.get_int();
-        }
-        else if( name == "road" )
-        {
-            addr.road_ = value.get_str();
-        }
-        else if( name == "town" )
-        {
-            addr.town_ = value.get_str();
-        }
-        else if( name == "county" )
-        {
-            addr.county_ = value.get_str();
-        }
-        else if( name == "country" )
-        {
-            addr.country_ = value.get_str();
-        }
-        else
-        {
-            assert( false );
-        }
-    }
+    addr.house_number_ = find_value( obj, "house_number" ).get_int();
+    addr.road_         = find_value( obj, "road"         ).get_str();
+    addr.town_         = find_value( obj, "town"         ).get_str();
+    addr.county_       = find_value( obj, "county"       ).get_str();
+    addr.country_      = find_value( obj, "country"      ).get_str();
 
     return addr;
 }
 
 void write_addrs( const char* file_name, const Address addrs[] )
 {
-    Array addr_array;
+    mArray addr_array;
 
     for( int i = 0; i < 5; ++i )
     {
@@ -103,11 +86,11 @@ vector< Address > read_addrs( const char* file_name )
 {
     ifstream is( file_name );
 
-    Value value;
+    mValue value;
 
     read( is, value );
 
-    const Array& addr_array = value.get_array();
+    const mArray& addr_array = value.get_array();
 
     vector< Address > addrs;
 
@@ -142,3 +125,4 @@ int main()
 
 	return 0;
 }
+;

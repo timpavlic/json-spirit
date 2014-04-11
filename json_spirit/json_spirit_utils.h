@@ -6,7 +6,7 @@
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 3.01
+// json spirit version 4.00
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
@@ -17,9 +17,6 @@
 
 namespace json_spirit
 { 
-    //template< class Object_t, class String_t >
-    //Value_impl< String_t >& find_value( const Object_t& obj, const String_t &name );
-
     template< class Obj_t, class Map_t >
     void obj_to_map( const Obj_t& obj, Map_t& mp_obj )
     {
@@ -48,10 +45,10 @@ namespace json_spirit
     typedef std::map< std::wstring, wValue > wMapped_obj;
 #endif
 
-    template< class Object_t, class String_t >
-    const Value_impl< String_t >& find_value( const Object_t& obj, const String_t& name )
+    template< class Object_type, class String_type >
+    const typename Object_type::value_type::Value_type& find_value( const Object_type& obj, const String_type& name )
     {
-        for( typename Object_t::const_iterator i = obj.begin(); i != obj.end(); ++i )
+        for( typename Object_type::const_iterator i = obj.begin(); i != obj.end(); ++i )
         {
             if( i->name_ == name )
             {
@@ -59,7 +56,7 @@ namespace json_spirit
             }
         }
 
-        return Value_impl< String_t >::null;
+        return Object_type::value_type::Value_type::null;
     }
 }
 
