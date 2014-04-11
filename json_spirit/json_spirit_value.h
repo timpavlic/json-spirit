@@ -1,12 +1,10 @@
 #ifndef JASON_SPIRIT_VALUE
 #define JASON_SPIRIT_VALUE
 
-/* Copyright (c) 2007-2009 John W Wilkinson
+//          Copyright John W. Wilkinson 2007 - 2009.
+// Distributed under the MIT License, see accompanying file LICENSE.txt
 
-   This source code can be used for any purpose as long as
-   this comment is retained. */
-
-// json spirit version 4.00
+// json spirit version 4.01
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
@@ -322,9 +320,10 @@ namespace json_spirit
 
         switch( type_ )
         {
-            case bool_type:  std::swap( bool_,      tmp.bool_ );      break;
-            case int_type:   std::swap( i_,         tmp.i_ );         break;
-            case real_type:  std::swap( d_,         tmp.d_ );         break;
+            case bool_type:  std::swap( bool_, tmp.bool_ ); break;
+            case int_type:   std::swap( i_,    tmp.i_ );    break;
+            case real_type:  std::swap( d_,    tmp.d_ );    break;
+            default: break;
         };
 
         return *this;
