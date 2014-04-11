@@ -1,5 +1,5 @@
-#ifndef JASON_SPIRIT_VALUE_TEST
-#define JASON_SPIRIT_VALUE_TEST
+#ifndef JASON_SPIRIT_UTILS_TEST
+#define JASON_SPIRIT_UTILS_TEST
 
 /* Copyright (c) 2007-2009 John W Wilkinson
 
@@ -14,7 +14,7 @@
 
 namespace json_spirit
 {
-    void test_value();
+    void test_utils();
 }
 
 #endif

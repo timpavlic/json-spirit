@@ -173,6 +173,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\json_spirit_utils.h"
+				>
+			</File>
+			<File
 				RelativePath=".\json_spirit_value.h"
 				>
 			</File>

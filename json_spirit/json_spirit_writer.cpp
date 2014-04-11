@@ -1,9 +1,9 @@
-/* Copyright (c) 2007-2008 John W Wilkinson
+/* Copyright (c) 2007-2009 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.06
+// json spirit version 3.00
 
 #include "json_spirit_writer.h"
 #include "json_spirit_value.h"
@@ -149,16 +149,14 @@ namespace
 
             String_t non_printable_to_string( unsigned int c )
             {
-                String_t result( to_str( "\\u" ) );
+                String_t result( 6, '\\' );
 
-                result.resize( 6, '0' );
+                result[1] = 'u';
 
-                for( int i = 0; i < 4; ++i  )
-                {
-                    result[ 5 - i ] = to_hex( c % 16 );
-
-                    c >>= 4;
-                }
+                result[ 5 ] = to_hex( c & 0x000F ); c >>= 4;
+                result[ 4 ] = to_hex( c & 0x000F ); c >>= 4;
+                result[ 3 ] = to_hex( c & 0x000F ); c >>= 4;
+                result[ 2 ] = to_hex( c & 0x000F );
 
                 return result;
             }

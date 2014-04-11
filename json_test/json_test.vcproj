@@ -187,6 +187,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\json_spirit_utils_test.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\json_spirit_value_test.cpp"
 				>
 			</File>
@@ -206,6 +210,10 @@
 			>
 			<File
 				RelativePath=".\json_spirit_reader_test.h"
+				>
+			</File>
+			<File
+				RelativePath=".\json_spirit_utils_test.h"
 				>
 			</File>
 			<File

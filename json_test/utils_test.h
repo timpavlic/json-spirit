@@ -1,12 +1,12 @@
 #ifndef JASON_SPIRIT_TEST_UTILS
 #define JASON_SPIRIT_TEST_UTILS
 
-/* Copyright (c) 2007-2008 John W Wilkinson
+/* Copyright (c) 2007-2009 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.06
+// json spirit version 3.00
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once

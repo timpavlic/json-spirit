@@ -1,12 +1,12 @@
 #ifndef JASON_SPIRIT_VALUE
 #define JASON_SPIRIT_VALUE
 
-/* Copyright (c) 2007-2008 John W Wilkinson
+/* Copyright (c) 2007-2009 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.06
+// json spirit version 3.00
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 # pragma once
@@ -80,20 +80,26 @@ namespace json_spirit
         String str_;
         Object_ptr obj_p_;
         Array_ptr array_p_;
-        bool bool_;
-        boost::int64_t i_;
-        double d_;
+        union
+        {
+           bool bool_;
+           boost::int64_t i_;
+           double d_;
+        };    
     };
 
     template< class String >
     struct Pair_impl
     {
-        Pair_impl( const String& name, const Value_impl< String >& value );
+        typedef String String_type;
+        typedef Value_impl< String > Value_type;
+
+        Pair_impl( const String& name, const Value_type& value );
 
         bool operator==( const Pair_impl< String >& lhs ) const;
 
         String name_;
-        Value_impl< String > value_;
+        Value_type value_;
     };
 
     // typedefs for ASCII, compatible with JSON Spirit v1.02
@@ -204,12 +210,16 @@ namespace json_spirit
         Value_impl tmp( lhs );
 
         std::swap( type_, tmp.type_ );
-        std::swap( bool_, tmp.bool_ );
-        std::swap( i_,    tmp.i_ );
-        std::swap( d_,    tmp.d_ );
         str_    .swap( tmp.str_ );
         obj_p_  .swap( tmp.obj_p_ );
         array_p_.swap( tmp.array_p_ );
+
+        switch( type_ )
+        {
+            case bool_type:  std::swap( bool_, tmp.bool_ ); break;
+            case int_type:   std::swap( i_,    tmp.i_ );    break;
+            case real_type:  std::swap( d_,    tmp.d_ );    break;
+        };
 
         return *this;
     }

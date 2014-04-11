@@ -1,9 +1,9 @@
-/* Copyright (c) 2007-2008 John W Wilkinson
+/* Copyright (c) 2007-2009 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.06
+// json spirit version 3.00
 
 #include "json_spirit_reader_test.h"
 #include "json_spirit_reader.h"
@@ -23,16 +23,31 @@ using namespace boost::assign;
 
 namespace
 {
+    template< class String_t, class Value_t >
+    void test_read( const String_t& s, Value_t& value )
+    {
+        // performs both types of read and checks they produce the same value
+
+        read( s, value );
+
+        Value_t value_2;
+
+        read_or_throw( s, value_2 );
+
+        assert_eq( value, value_2 );
+    }
+
     template< class Value_t >
     struct Test_runner
     {
-        typedef typename Value_t::String_type     String_t;
-        typedef typename Value_t::Object          Object_t;
-        typedef typename Value_t::Array           Array_t;
-        typedef typename String_t::value_type     Char_t;
-        typedef typename String_t::const_iterator Iter_t;
-        typedef Pair_impl< String_t >             Pair_t;
-        typedef std::basic_istream< Char_t >      Istream_t;
+        typedef typename Value_t::String_type      String_t;
+        typedef typename Value_t::Object           Object_t;
+        typedef typename Value_t::Array            Array_t;
+        typedef typename String_t::value_type      Char_t;
+        typedef typename String_t::const_iterator  Iter_t;
+        typedef Pair_impl< String_t >              Pair_t;
+        typedef std::basic_istringstream< Char_t > Istringstream_t;
+        typedef std::basic_istream< Char_t >       Istream_t;
 
         String_t to_str( const char* c_str )
         {
@@ -67,13 +82,26 @@ namespace
             }
         }
 
-        void test_syntax( const char* c_str, bool expected_result = true )
+        void test_syntax( const char* c_str, bool expected_success = true )
         {
+            const String_t str = to_str( c_str );
+
             Value_t value;
 
-            const bool success = read( to_str( c_str ), value );
+            const bool ok = read( str, value );
 
-            assert_eq( success, expected_result );
+            assert_eq( ok, expected_success  );
+
+            try
+            {
+                read_or_throw( str, value );
+
+                assert( expected_success );
+            }
+            catch( ... )
+            {
+                assert( !expected_success );
+            }
         }
 
         template< typename Int >
@@ -90,6 +118,8 @@ namespace
         {
             test_syntax( "{}" );
             test_syntax( "{ }" );
+            test_syntax( "{ } " );
+            test_syntax( "{ }  " );
             test_syntax( "{\"\":\"\"}" );
             test_syntax( "{\"test\":\"123\"}" );
             test_syntax( "{\"test\" : \"123\"}" );
@@ -132,19 +162,14 @@ namespace
         {
             Value_t value;
 
-            read( to_str( c_str ), value );
+            test_read( to_str( c_str ), value );
 
             return value;
         }
 
-        bool read_cstr( const char* c_str, Value_t& value )
+        void read_cstr( const char* c_str, Value_t& value )
         {
-            return read( to_str( c_str ), value );
-        }
-
-        void check_read( const char* c_str, Value_t& value, bool expected_result = true )
-        {
-            assert_eq( read_cstr( c_str, value ), expected_result );
+            test_read( to_str( c_str ), value );
         }
 
         void check_reading( const char* c_str )
@@ -153,13 +178,9 @@ namespace
 
             String_t in_s( to_str( c_str ) );
 
-            const bool success = read( in_s, value );
-
-            assert_eq( success, true );
+            test_read( in_s, value );
 
             const String_t result = write_formatted( value ); 
-
-//            cout << in_s.c_str() << endl << result.c_str() << endl ;
 
             assert_eq( in_s, result );
         }
@@ -183,28 +204,28 @@ namespace
 
             Value_t value;
 
-            check_read( "{\n"
-                        "    \"name 1\" : \"value 1\"\n"
-                        "}", value );
+            read_cstr( "{\n"
+                       "    \"name 1\" : \"value 1\"\n"
+                       "}", value );
 
             check_eq( value.get_obj(), list_of( p1 ) );
 
-            check_read( "{\"name 1\":\"value 1\",\"name 2\":\"value 2\"}", value );
+            read_cstr( "{\"name 1\":\"value 1\",\"name 2\":\"value 2\"}", value );
 
             check_eq( value.get_obj(), list_of( p1 )( p2 ) );
 
-            check_read( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : \"value 2\",\n"
-                        "    \"name 3\" : \"value 3\"\n"
-                        "}", value );
+            read_cstr( "{\n"
+                       "    \"name 1\" : \"value 1\",\n"
+                       "    \"name 2\" : \"value 2\",\n"
+                       "    \"name 3\" : \"value 3\"\n"
+                       "}", value );
 
             check_eq( value.get_obj(), list_of( p1 )( p2 )( p3 ) );
 
-            check_read( "{\n"
-                        "    \"\" : \"value\",\n"
-                        "    \"name\" : \"\"\n"
-                        "}", value );
+            read_cstr( "{\n"
+                       "    \"\" : \"value\",\n"
+                       "    \"name\" : \"\"\n"
+                       "}", value );
 
             check_eq( value.get_obj(), list_of( make_pair( "", "value" ) )( make_pair( "name", "" ) ) );
 
@@ -309,7 +330,7 @@ namespace
             check_reading( "[\n"
                            "    1,\n"
                            "    1.200000000000000,\n"
-                           "    \"john\",\n"
+                           "    \"john]\",\n"
                            "    true,\n"
                            "    false,\n"
                            "    null\n"
@@ -401,20 +422,45 @@ namespace
             check_reading( LLONG_MIN, LLONG_MAX );
         }
 
-        void test_from_stream()
+        void test_from_stream( const char* json_str, bool expected_success,
+                               const Error_position& expected_error )
         {
             Value_t value;
 
-            String_t in_s( to_str( "[1,2]" ) );
+            String_t in_s( to_str( json_str ) );
 
             basic_istringstream< Char_t > is( in_s );
 
-            const bool success = read( is, value );
+            const bool ok = read( is, value );
 
-            assert_eq( success, true );
+            assert_eq( ok, expected_success );
 
-            assert_eq( in_s, write( value ) );
-       }
+            if( ok )
+            {
+                assert_eq( in_s, write( value ) );
+            }
+
+            try
+            {
+                basic_istringstream< Char_t > is( in_s );
+
+                read_or_throw( is, value );
+
+                assert_eq( expected_success, true );
+
+                assert_eq( in_s, write( value ) );
+            }
+            catch( const Error_position error )
+            {
+                assert_eq( error, expected_error );
+            }
+        }
+
+        void test_from_stream()
+        {
+            test_from_stream( "[1,2]", true, Error_position() );
+            test_from_stream( "\n\n foo", false, Error_position( 3, 2,"not a value"  ) );
+        }
 
         void test_escape_chars( const char* json_str, const char* c_str )
         {
@@ -422,7 +468,7 @@ namespace
 
             string s( string( "{\"" ) + json_str + "\" : \"" + json_str + "\"} " );
 
-            check_read( s.c_str(), value );
+            read_cstr( s.c_str(), value );
 
             const Pair_t& pair( value.get_obj()[0] );
 
@@ -470,25 +516,194 @@ namespace
             check_is_null( "null" );
         }
 
-        void check_read_fails( const char* c_str )
+        void check_read_fails( const char* c_str, int line, int column, const string& reason )
         {
             Value_t value;
 
-            check_read( c_str, value, false );
+            try
+            {
+                read_cstr( c_str, value );
+
+                assert( false );
+            }
+            catch( const Error_position posn )
+            {
+                assert_eq( posn, Error_position( line, column, reason ) );
+            }
         }
 
         void test_error_cases()
         {
-            check_read_fails( "[\"1\\\\\",\"2\\\"]" );
-            check_read_fails( "." );
-            check_read_fails( "1 1" );
-            check_read_fails( "\"\"\"" );
-            check_read_fails( "'1'" );
-            check_read_fails( "{1 2}" );
-            check_read_fails( "1.263Q" );
-            check_read_fails( "1.26 3" );
-            check_read_fails( "'" );
-            check_read_fails( "[1 2]" );
+            check_read_fails( "",                       1, 1,  "not a value" );
+            check_read_fails( "foo",                    1, 1,  "not a value" );
+            check_read_fails( " foo",                   1, 2,  "not a value" );
+            check_read_fails( "  foo",                  1, 3,  "not a value" );
+            check_read_fails( "\n\n foo",               3, 2,  "not a value" );
+            check_read_fails( "!!!",                    1, 1,  "not a value" );
+            check_read_fails( "\"bar",                  1, 1,  "not a value" );
+            check_read_fails( "bar\"",                  1, 1,  "not a value" );
+            check_read_fails( "[1}",                    1, 3,  "not an array" );
+            check_read_fails( "[1,2?",                  1, 5,  "not an array" );
+            check_read_fails( "[1,2}",                  1, 5,  "not an array" );
+            check_read_fails( "[1;2]",                  1, 3,  "not an array" );
+            check_read_fails( "[1,\n2,\n3,]",           3, 2,  "not an array" );
+            check_read_fails( "{\"name\":\"value\"]",   1, 16, "not an object" );
+            check_read_fails( "{\"name\",\"value\"}",   1, 8,  "no colon in pair" );
+            check_read_fails( "{name:\"value\"}",       1, 2,  "not an object" );
+            check_read_fails( "{\n1:\"value\"}",        2, 1,  "not an object" );
+            check_read_fails( "{\n  name\":\"value\"}", 2, 3,  "not an object" );
+            check_read_fails( "{\"name\":foo}",         1, 9,  "not a value" );
+            check_read_fails( "{\"name\":value\"}",     1, 9,  "not a value" );
+        }
+
+        typedef vector< int > Ints;
+
+        bool test_read_range( Iter_t& first, Iter_t last, Value_t& value )
+        {
+            Iter_t first_ = first;
+
+            const bool ok = read( first, last, value );
+
+            try
+            {
+                Value_t value_;
+
+                read_or_throw( first_, last, value_ );
+
+                assert_eq( ok, true );
+                assert_eq( value, value_ );
+            }
+            catch( ... )
+            {
+                assert_eq( ok, false );
+            }
+
+            return ok;
+        }
+
+        void check_value_sequence( Iter_t first, Iter_t last, const Ints& expected_values, bool all_input_consumed )
+        {
+            Value_t value;
+            
+            for( Ints::size_type i = 0; i < expected_values.size(); ++i )
+            {
+                const bool ok = test_read_range( first, last, value );
+
+                assert_eq( ok, true );
+
+                const bool is_last( i == expected_values.size() - 1 );
+
+                assert_eq( first == last, is_last ? all_input_consumed : false );
+            }
+  
+            const bool ok = test_read_range( first, last, value );
+
+            assert_eq( ok, false );
+        }
+
+        void check_value_sequence( Istream_t& is, const Ints& expected_values, bool all_input_consumed )
+        {
+            Value_t value;
+            
+            for( Ints::size_type i = 0; i < expected_values.size(); ++i )
+            {
+                read_or_throw( is, value );
+
+                assert_eq( value.get_int(), expected_values[i] ); 
+
+                const bool is_last( i == expected_values.size() - 1 );
+
+                assert_eq( is.eof(), is_last ? all_input_consumed : false );
+            }
+                
+            try
+            {
+                read_or_throw( is, value );
+
+                assert( false );
+            }
+            catch( ... )
+            {
+            }
+             
+            assert_eq( is.eof(), true );
+        }
+
+        void check_value_sequence( const char* c_str, const Ints& expected_values, bool all_input_consumed )
+        {
+            const String_t s( to_str( c_str ) );
+
+            check_value_sequence( s.begin(), s.end(), expected_values, all_input_consumed );
+
+            Istringstream_t is( s );
+
+            check_value_sequence( is, expected_values, all_input_consumed );
+        }
+
+        void check_array( const Value_t& value, typename Array_t::size_type expected_size )
+        {
+            assert_eq( value.type(), array_type );
+
+            const Array_t& arr = value.get_array();
+
+            assert_eq( arr.size(), expected_size );
+
+            for( typename Array_t::size_type i = 0; i < expected_size; ++i )
+            {
+                const Value_t& val = arr[i];
+
+                assert_eq( val.type(), int_type );
+                assert_eq( val.get_int(), int( i + 1 ) );
+            }
+        }
+
+        void check_reading_array( Iter_t& begin, Iter_t end, typename Array_t::size_type expected_size )
+        {
+            Value_t value;
+
+            test_read_range( begin, end, value );
+
+            check_array( value, expected_size );
+        }
+
+        void check_reading_array( Istream_t& is, typename Array_t::size_type expected_size )
+        {
+            Value_t value;
+
+            read( is, value );
+
+            check_array( value, expected_size );
+        }
+
+        void test_sequence_of_values()
+        {
+            check_value_sequence( "",   Ints(), false );
+            check_value_sequence( " ",  Ints(), false );
+            check_value_sequence( "  ", Ints(), false );
+            check_value_sequence( "     10 ",      list_of( 10 ), false );
+            check_value_sequence( "     10 11 ",   list_of( 10 )( 11 ), false );
+            check_value_sequence( "     10 11 12", list_of( 10 )( 11 )( 12 ), true);
+            check_value_sequence( "10 11 12",      list_of( 10 )( 11 )( 12 ), true);
+
+            // 
+
+            const String_t str( to_str( "[] [ 1 ] [ 1, 2 ]  [ 1, 2, 3 ]" ) );
+
+            Iter_t       begin = str.begin();
+            const Iter_t end   = str.end();
+
+            check_reading_array( begin, end, 0 );
+            check_reading_array( begin, end, 1 );
+            check_reading_array( begin, end, 2 );
+            check_reading_array( begin, end, 3 );
+
+            Istringstream_t is( str );
+
+            check_reading_array( is, 0 );
+            check_reading_array( is, 1 );
+            check_reading_array( is, 2 );
+            check_reading_array( is, 3 );
+
         }
 
         void run_tests()
@@ -499,6 +714,7 @@ namespace
             test_escape_chars();
             test_values();
             test_error_cases();
+            test_sequence_of_values();
         }
     };
 
@@ -507,9 +723,7 @@ namespace
     {
         wValue value;
 
-        const bool success = read( L"[\"\\uABCD\"]", value );
-
-        assert( success );
+        test_read( L"[\"\\uABCD\"]", value );
 
         const wstring s( value.get_array()[0].get_str() );
 
@@ -522,9 +736,7 @@ namespace
     {
         Value value;
 
-        const bool success = read( "[\"" + s + "\"]", value );
-
-        assert_eq( success, true );
+        test_read( "[\"" + s + "\"]", value );
 
         assert_eq( value.get_array()[0].get_str(), "äöüß" );
     }
@@ -536,6 +748,8 @@ namespace
     }
 }
 
+#include <fstream>
+
 void json_spirit::test_reader()
 {
     Test_runner< Value >().run_tests();
@@ -546,6 +760,26 @@ void json_spirit::test_reader()
 #endif
 
     test_extended_ascii();
+
+#ifndef _DEBUG
+    //ifstream ifs( "test.txt" );
+
+    //string s;
+
+    //getline( ifs, s );
+
+    //timer t;
+
+    //for( int i = 0; i < 2000; ++i )
+    //{
+    //    Value value;
+
+    //    read( s, value );
+    //}
+
+    //cout << t.elapsed() << endl;
+
+//    const string so = write( value );
 
     //Object obj;
 
@@ -565,4 +799,5 @@ void json_spirit::test_reader()
     //cout << t.elapsed() << endl;
 
     //cout << "obj size " << value.get_obj().size();
+#endif
 }

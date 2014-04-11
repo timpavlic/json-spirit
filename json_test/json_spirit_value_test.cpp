@@ -1,9 +1,9 @@
-/* Copyright (c) 2007-2008 John W Wilkinson
+/* Copyright (c) 2007-2009 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.06
+// json spirit version 3.00
 
 #include "json_spirit_value_test.h"
 #include "json_spirit_value.h"
@@ -173,7 +173,7 @@ namespace
     void test_copying()
     {
         {
-            const Array array_1( list_of(1)(2) );
+            const Array array_1 = list_of(1)(2);
 
             Value v1( array_1 );
             const Value v2( v1 );
@@ -187,7 +187,7 @@ namespace
             assert_array_eq( v2, array_1 );
         }
         {
-            const Object obj_1( list_of( Pair( "a", 1 ) )( Pair( "b", 2 ) ) );
+            const Object obj_1 = list_of( Pair( "a", 1 ) )( Pair( "b", 2 ) );
 
             Value v1( obj_1 );
             Value v2;
@@ -208,12 +208,33 @@ namespace
             check_copy( string("test") );
             check_copy( true );
             check_copy( false );
-            check_copy( Array( list_of(1)(2) ) );
-            check_copy( Object( list_of( Pair( "a", 1 ) )( Pair( "b", 2 ) ) ) );
+            const Array array_1 = list_of(1)(2);
+            check_copy( array_1 );
+            const Object obj_1 = list_of( Pair( "a", 1 ) )( Pair( "b", 2 ) );
+            check_copy( obj_1 );
             check_copying_null();
         }
     }
+
+    template< typename ObjectType > void check_pair_typedefs( ObjectType &object )
+    {
+        typename ObjectType::value_type::String_type name = object[0].name_;
+        typename ObjectType::value_type::Value_type value = object[0].value_;
+    }
+
+    void check_pair_typedefs()
+    {
+        Object o;
+        check_pair_typedefs( o );
+        
+#ifndef BOOST_NO_STD_WSTRING
+        wObject wo;
+        check_pair_typedefs( wo );
+#endif
+    }
 }
+
+#include <iostream>
 
 void json_spirit::test_value()
 {

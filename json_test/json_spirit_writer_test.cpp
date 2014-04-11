@@ -1,9 +1,9 @@
-/* Copyright (c) 2007-2008 John W Wilkinson
+/* Copyright (c) 2007-2009 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
 
-// json spirit version 2.06
+// json spirit version 3.00
 
 #include "json_spirit_writer_test.h"
 #include "json_spirit_writer.h"
