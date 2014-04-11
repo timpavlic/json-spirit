@@ -1,7 +1,9 @@
-/* Copyright (c) 2007 John W Wilkinson
+/* Copyright (c) 2007-2008 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
+
+// json spirit version 2.03
 
 #include "json_spirit.h"
 #include <cassert>
@@ -172,11 +174,11 @@ vector< Address > read_addrs( const char* file_name )
 
 int main()
 {
-    Address addrs[5] = { { 42, "East Street", "Newtown",     "Essex",        "England" },
-                         { 1,  "West Street", "Hull",        "Yorkshire",    "England" },
-                         { 12, "South Road",  "Aberystwyth", "Dyfed",        "Wales"   },
-                         { 45, "North Road",  "Paignton",    "Devon",        "England" },
-                         { 78, "Up Street",   "Ware",        "Hertforshire", "England" } };
+    const Address addrs[5] = { { 42, "East Street",  "Newtown",     "Essex",        "England" },
+                               { 1,  "West Street",  "Hull",        "Yorkshire",    "England" },
+                               { 12, "South Road",   "Aberystwyth", "Dyfed",        "Wales"   },
+                               { 45, "North Road",   "Paignton",    "Devon",        "England" },
+                               { 78, "Upper Street", "Ware",        "Hertforshire", "England" } };
 
     const char* file_name( "demo.txt" );
 

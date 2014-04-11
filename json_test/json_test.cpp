@@ -1,4 +1,6 @@
-/* Copyright (c) 2007 John W Wilkinson
+/* Copyright (c) 2007-2008 John W Wilkinson
+
+   json spirit version 2.03
 
    This source code can be used for any purpose as long as
    this comment is retained. */
@@ -20,7 +22,8 @@ int main()
     test_writer();
     test_reader();
 
-    cout << "all tests passed";
+    cout << "all tests passed" << endl << endl;
+    cout << "press any key to continue";
 
     string s;
     cin >> s;

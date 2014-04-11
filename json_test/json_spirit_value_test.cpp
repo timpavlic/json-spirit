@@ -1,7 +1,9 @@
-/* Copyright (c) 2007 John W Wilkinson
+/* Copyright (c) 2007-2008 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
+
+// json spirit version 2.03
 
 #include "json_spirit_value_test.h"
 #include "json_spirit_value.h"
@@ -69,14 +71,20 @@ namespace
     {
         Value v1( 1 );
         Value v2( 1 );
-        Value v3( 2 );
+        Value v3( INT_MAX );
 
         assert_eq( v1.type(), int_type );
         assert_eq ( v1, v2 );
         assert_neq( v1, v3 );
 
         assert_eq( v1.get_int(), 1 );
-        assert_eq( v3.get_int(), 2 );
+        assert_eq( v3.get_int(), INT_MAX );
+        assert_eq( v1.get_int64(), 1 );
+        assert_eq( v3.get_int64(), INT_MAX );
+
+        Value v4( LLONG_MAX );
+
+        assert_eq( v4.get_int64(), LLONG_MAX );
     }
 
     void test_real_value()
@@ -114,8 +122,12 @@ void json_spirit::test_value()
     Value value_obj_2 ( obj );
     Value value_bool_2( false );
 
+    const char* str( "value" );
+    Value value_str_2b ( str );
+
     assert_eq( value_str, value_str );
     assert_eq( value_str, value_str_2 );
+    assert_eq( value_str, value_str_2b );
     assert_eq( value_obj, value_obj );
     assert_eq( value_obj, value_obj_2 );
     assert_neq( value_str, value_obj );

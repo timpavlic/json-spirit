@@ -151,10 +151,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\json_spirit_value.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\json_spirit_writer.cpp"
 				>
 			</File>

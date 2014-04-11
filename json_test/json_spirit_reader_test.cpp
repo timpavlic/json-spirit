@@ -1,7 +1,9 @@
-/* Copyright (c) 2007 John W Wilkinson
+/* Copyright (c) 2007-2008 John W Wilkinson
 
    This source code can be used for any purpose as long as
    this comment is retained. */
+
+// json spirit version 2.03
 
 #include "json_spirit_reader_test.h"
 #include "json_spirit_reader.h"
@@ -21,351 +23,479 @@ using namespace boost::assign;
 
 namespace
 {
-    void check_eq( const Object& obj_1, const Object& obj_2 )
+    template< class Value_t >
+    struct Test_runner
     {
-        const Object::size_type size( obj_1.size() );
+        typedef typename Value_t::String_type     String_t;
+        typedef typename Value_t::Object          Object_t;
+        typedef typename Value_t::Array           Array_t;
+        typedef typename String_t::value_type     Char_t;
+        typedef typename String_t::const_iterator Iter_t;
+        typedef Pair_impl< String_t >             Pair_t;
+        typedef std::basic_istream< Char_t >      Istream_t;
 
-        assert_eq( size, obj_2.size() );
-
-        for( Object::size_type i = 0; i < size; ++i )
+        String_t to_str( const char* c_str )
         {
-            assert_eq( obj_1[i], obj_2[i] ); 
+            return ::to_str< String_t >( c_str );
         }
-    }
 
-    void test_syntax( const string& s )
-    {
-        Value value;
+        Pair_t make_pair( const char* c_name, const char* c_value )
+        {
+            return Pair_t( to_str( c_name ), to_str( c_value ) );
+        }
 
-        const bool success = read( s, value );
+        Pair_t p1;
+        Pair_t p2;
+        Pair_t p3;
 
-        assert_eq( success, true );
-    }
+        Test_runner()
+        :   p1( make_pair("name 1", "value 1") )
+        ,   p2( make_pair("name 2", "value 2") )
+        ,   p3( make_pair("name 3", "value 3") )
+        {
+        }
 
-    void test_syntax()
-    {
-        test_syntax( "{}" );
-        test_syntax( "{ }" );
-        test_syntax( "{\"\":\"\"}" );
-        test_syntax( "{\"test\":\"123\"}" );
-        test_syntax( "{\"test\" : \"123\"}" );
-        test_syntax( "{\"testing testing testing\":\"123\"}" );
-        test_syntax( "{\"\":\"abc\"}" );
-        test_syntax( "{\"abc\":\"\"}" );
-        test_syntax( "{\"\":\"\"}" );
-        test_syntax( "{\"test\":true}" );
-        test_syntax( "{\"test\":false}" );
-        test_syntax( "{\"test\":null}" );
-        test_syntax( "{\"test1\":\"123\",\"test2\":\"456\"}" );
-        test_syntax( "{\"test1\":\"123\",\"test2\":\"456\",\"test3\":\"789\"}" );
-        test_syntax( "{\"test1\":{\"test2\":\"123\",\"test3\":\"456\"}}" );
-        test_syntax( "{\"test1\":{\"test2\":{\"test3\":\"456\"}}}" );
-        test_syntax( "{\"test1\":[\"a\",\"bb\",\"cc\"]}" );
-        test_syntax( "{\"test1\":[true,false,null]}" );
-        test_syntax( "{\"test1\":[true,\"abc\",{\"a\":\"b\"},{\"d\":false},null]}" );
-        test_syntax( "{\"test1\":[1,2,-3]}" );
-        test_syntax( "{\"test1\":[1.1,2e4,-1.234e-34]}" );
-        test_syntax( "{\n"
-                      "\t\"test1\":\n"
-                      "\t\t{\n"
-                      "\t\t\t\"test2\":\"123\",\n"
-                      "\t\t\t\"test3\":\"456\"\n"
-                      "\t\t}\n"
-                      "}\n" );
-        test_syntax( "[]" );
-        test_syntax( "[ ]" );
-        test_syntax( "[1,2,3]" );
-        test_syntax( "[ 1, -2, 3]" );
-        test_syntax( "[ 1.2, -2e6, -3e-6 ]" );
-        test_syntax( "[ 1.2, \"str\", -3e-6, { \"field\" : \"data\" } ]" );
-    }
+        void check_eq( const Object_t& obj_1, const Object_t& obj_2 )
+        {
+            const typename Object_t::size_type size( obj_1.size() );
 
-    const Pair p1( "name 1", "value 1" );
-    const Pair p2( "name 2", "value 2" );
-    const Pair p3( "name 3", "value 3" );
+            assert_eq( size, obj_2.size() );
 
-    void check_read( istream& is, Value& value )
-    {
-        const bool success = read( is, value );
+            for( typename Object_t::size_type i = 0; i < size; ++i )
+            {
+                assert_eq( obj_1[i], obj_2[i] ); 
+            }
+        }
 
-        assert_eq( success, true );
-    }
+        void test_syntax( const char* c_str )
+        {
+            Value_t value;
 
-    void check_read( const string& s, Value& value )
-    {
-        const bool success = read( s, value );
+            const bool success = read( to_str( c_str ), value );
 
-        assert_eq( success, true );
-    }
+            assert_eq( success, true );
+        }
 
-    void check_reading( const string& s )
-    {
-        static Value value;
+        template< typename Int >
+        void test_syntax( Int min_int, Int max_int )
+        {
+            ostringstream os;
 
-        istringstream is( s );
+            os << "[" << min_int << "," << max_int << "]";
 
-        const bool success = read( is, value );
+            test_syntax( os.str().c_str() );
+        }
 
-        assert_eq( success, true );
+        void test_syntax()
+        {
+            test_syntax( "{}" );
+            test_syntax( "{ }" );
+            test_syntax( "{\"\":\"\"}" );
+            test_syntax( "{\"test\":\"123\"}" );
+            test_syntax( "{\"test\" : \"123\"}" );
+            test_syntax( "{\"testing testing testing\":\"123\"}" );
+            test_syntax( "{\"\":\"abc\"}" );
+            test_syntax( "{\"abc\":\"\"}" );
+            test_syntax( "{\"\":\"\"}" );
+            test_syntax( "{\"test\":true}" );
+            test_syntax( "{\"test\":false}" );
+            test_syntax( "{\"test\":null}" );
+            test_syntax( "{\"test1\":\"123\",\"test2\":\"456\"}" );
+            test_syntax( "{\"test1\":\"123\",\"test2\":\"456\",\"test3\":\"789\"}" );
+            test_syntax( "{\"test1\":{\"test2\":\"123\",\"test3\":\"456\"}}" );
+            test_syntax( "{\"test1\":{\"test2\":{\"test3\":\"456\"}}}" );
+            test_syntax( "{\"test1\":[\"a\",\"bb\",\"cc\"]}" );
+            test_syntax( "{\"test1\":[true,false,null]}" );
+            test_syntax( "{\"test1\":[true,\"abc\",{\"a\":\"b\"},{\"d\":false},null]}" );
+            test_syntax( "{\"test1\":[1,2,-3]}" );
+            test_syntax( "{\"test1\":[1.1,2e4,-1.234e-34]}" );
+            test_syntax( "{\n"
+                          "\t\"test1\":\n"
+                          "\t\t{\n"
+                          "\t\t\t\"test2\":\"123\",\n"
+                          "\t\t\t\"test3\":\"456\"\n"
+                          "\t\t}\n"
+                          "}\n" );
+            test_syntax( "[]" );
+            test_syntax( "[ ]" );
+            test_syntax( "[1,2,3]" );
+            test_syntax( "[ 1, -2, 3]" );
+            test_syntax( "[ 1.2, -2e6, -3e-6 ]" );
+            test_syntax( "[ 1.2, \"str\", -3e-6, { \"field\" : \"data\" } ]" );
 
-        cout << s << endl << write_formatted( value )<< endl ;
+            test_syntax( INT_MIN, INT_MAX );
+            test_syntax( LLONG_MIN, LLONG_MAX );
+        }
 
-        assert_eq( s, write_formatted( value ) );
-    }
+        void check_read( const char* c_str, Value_t& value )
+        {
+            const bool success = read( to_str( c_str ), value );
 
-    void test_reading()
-    {
-        check_reading( "{\n}" );
+            assert_eq( success, true );
+        }
 
-        Value value;
+        void check_reading( const char* c_str )
+        {
+            Value_t value;
 
-        istringstream is1( "{\n"
-                           "    \"name 1\" : \"value 1\"\n"
+            String_t in_s( to_str( c_str ) );
+
+            const bool success = read( in_s, value );
+
+            assert_eq( success, true );
+
+            const String_t result = write_formatted( value ); 
+
+//            cout << in_s.c_str() << endl << result.c_str() << endl ;
+
+            assert_eq( in_s, result );
+        }
+
+        template< typename Int >
+        void check_reading( Int min_int, Int max_int )
+        {
+            ostringstream os;
+
+            os << "[\n"
+                   "    " << min_int << ",\n"
+                   "    " << max_int << "\n"
+                   "]";
+
+            check_reading( os.str().c_str() );
+        }
+
+        void test_reading()
+        {
+            check_reading( "{\n}" );
+
+            Value_t value;
+
+            check_read( "{\n"
+                        "    \"name 1\" : \"value 1\"\n"
+                        "}", value );
+
+            check_eq( value.get_obj(), list_of( p1 ) );
+
+            check_read( "{\"name 1\":\"value 1\",\"name 2\":\"value 2\"}", value );
+
+            check_eq( value.get_obj(), list_of( p1 )( p2 ) );
+
+            check_read( "{\n"
+                        "    \"name 1\" : \"value 1\",\n"
+                        "    \"name 2\" : \"value 2\",\n"
+                        "    \"name 3\" : \"value 3\"\n"
+                        "}", value );
+
+            check_eq( value.get_obj(), list_of( p1 )( p2 )( p3 ) );
+
+            check_read( "{\n"
+                        "    \"\" : \"value\",\n"
+                        "    \"name\" : \"\"\n"
+                        "}", value );
+
+            check_eq( value.get_obj(), list_of( make_pair( "", "value" ) )( make_pair( "name", "" ) ) );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : \"value 1\",\n"
+                            "    \"name 2\" : {\n"
+                            "        \"name 3\" : \"value 3\",\n"
+                            "        \"name_4\" : \"value_4\"\n"
+                            "    }\n"
+                            "}" );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : \"value 1\",\n"
+                            "    \"name 2\" : {\n"
+                            "        \"name 3\" : \"value 3\",\n"
+                            "        \"name_4\" : \"value_4\",\n"
+                            "        \"name_5\" : {\n"
+                            "            \"name_6\" : \"value_6\",\n"
+                            "            \"name_7\" : \"value_7\"\n"
+                            "        }\n"
+                            "    }\n"
+                            "}" );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : \"value 1\",\n"
+                            "    \"name 2\" : {\n"
+                            "        \"name 3\" : \"value 3\",\n"
+                            "        \"name_4\" : {\n"
+                            "            \"name_5\" : \"value_5\",\n"
+                            "            \"name_6\" : \"value_6\"\n"
+                            "        },\n"
+                            "        \"name_7\" : \"value_7\"\n"
+                            "    }\n"
+                            "}" );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : \"value 1\",\n"
+                            "    \"name 2\" : {\n"
+                            "        \"name 3\" : \"value 3\",\n"
+                            "        \"name_4\" : {\n"
+                            "            \"name_5\" : \"value_5\",\n"
+                            "            \"name_6\" : \"value_6\"\n"
+                            "        },\n"
+                            "        \"name_7\" : \"value_7\"\n"
+                            "    },\n"
+                            "    \"name_8\" : \"value_8\",\n"
+                            "    \"name_9\" : {\n"
+                            "        \"name_10\" : \"value_10\"\n"
+                            "    }\n"
+                            "}" );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : {\n"
+                            "        \"name 2\" : {\n"
+                            "            \"name 3\" : {\n"
+                            "                \"name_4\" : {\n"
+                            "                    \"name_5\" : \"value\"\n"
+                            "                }\n"
+                            "            }\n"
+                            "        }\n"
+                            "    }\n"
+                            "}" );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : \"value 1\",\n"
+                            "    \"name 2\" : true,\n"
+                            "    \"name 3\" : false,\n"
+                            "    \"name_4\" : \"value_4\",\n"
+                            "    \"name_5\" : true\n"
+                            "}" );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : \"value 1\",\n"
+                            "    \"name 2\" : null,\n"
+                            "    \"name 3\" : \"value 3\",\n"
+                            "    \"name_4\" : null\n"
+                            "}" );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : \"value 1\",\n"
+                            "    \"name 2\" : 123,\n"
+                            "    \"name 3\" : \"value 3\",\n"
+                            "    \"name_4\" : -567\n"
+                            "}" );
+
+            check_reading( "{\n"
+                            "    \"name 1\" : \"value 1\",\n"
+                            "    \"name 2\" : 1.200000000000000,\n"
+                            "    \"name 3\" : \"value 3\",\n"
+                            "    \"name_4\" : 1.234567890123456e+025,\n"
+                            "    \"name_5\" : -1.234000000000000e-123,\n"
+                            "    \"name_6\" : 1.000000000000000e-123,\n"
+                            "    \"name_7\" : 1234567890.123456\n"
+                            "}" );
+
+            check_reading( "[\n]" );
+
+            check_reading( "[\n"
+                           "    1\n"
+                           "]" );
+
+            check_reading( "[\n"
+                           "    1,\n"
+                           "    1.200000000000000,\n"
+                           "    \"john\",\n"
+                           "    true,\n"
+                           "    false,\n"
+                           "    null\n"
+                           "]" );
+
+            check_reading( "[\n"
+                           "    1,\n"
+                           "    [\n"
+                           "        2,\n"
+                           "        3\n"
+                           "    ]\n"
+                           "]" );
+
+            check_reading( "[\n"
+                           "    1,\n"
+                           "    [\n"
+                           "        2,\n"
+                           "        3\n"
+                           "    ],\n"
+                           "    [\n"
+                           "        4,\n"
+                           "        [\n"
+                           "            5,\n"
+                           "            6,\n"
+                           "            7\n"
+                           "        ]\n"
+                           "    ]\n"
+                           "]" );
+
+            check_reading( "[\n"
+                           "    {\n"
+                           "        \"name\" : \"value\"\n"
+                           "    }\n"
+                           "]" );
+
+            check_reading( "{\n"
+                           "    \"name\" : [\n"
+                           "        1\n"
+                           "    ]\n"
                            "}" );
 
-        check_read( is1, value );
+            check_reading( "[\n"
+                           "    {\n"
+                           "        \"name 1\" : \"value\",\n"
+                           "        \"name 2\" : [\n"
+                           "            1,\n"
+                           "            2,\n"
+                           "            3\n"
+                           "        ]\n"
+                           "    }\n"
+                           "]" );
 
-        check_eq( value.get_obj(), list_of( p1 ) );
+            check_reading( "{\n"
+                           "    \"name 1\" : [\n"
+                           "        1,\n"
+                           "        {\n"
+                           "            \"name 2\" : \"value 2\"\n"
+                           "        }\n"
+                           "    ]\n"
+                           "}" );
 
-        istringstream is2( "{\"name 1\":\"value 1\",\"name 2\":\"value 2\"}"  );
+            check_reading( "[\n"
+                           "    {\n"
+                           "        \"name 1\" : \"value 1\",\n"
+                           "        \"name 2\" : [\n"
+                           "            1,\n"
+                           "            2,\n"
+                           "            {\n"
+                           "                \"name 3\" : \"value 3\"\n"
+                           "            }\n"
+                           "        ]\n"
+                           "    }\n"
+                           "]" );
 
-        check_read( is2, value );
+            check_reading( "{\n"
+                           "    \"name 1\" : [\n"
+                           "        1,\n"
+                           "        {\n"
+                           "            \"name 2\" : [\n"
+                           "                1,\n"
+                           "                2,\n"
+                           "                3\n"
+                           "            ]\n"
+                           "        }\n"
+                           "    ]\n"
+                           "}" );
 
-        check_eq( value.get_obj(), list_of( p1 )( p2 ) );
+            check_reading( INT_MIN, INT_MAX );
+            check_reading( LLONG_MIN, LLONG_MAX );
+        }
 
-        check_read( "{\n"
-                    "    \"name 1\" : \"value 1\",\n"
-                    "    \"name 2\" : \"value 2\",\n"
-                    "    \"name 3\" : \"value 3\"\n"
-                    "}", value );
+        void test_from_stream()
+        {
+            Value_t value;
 
-        check_eq( value.get_obj(), list_of( p1 )( p2 )( p3 ) );
+            String_t in_s( to_str( "[1,2]" ) );
 
-        check_read( "{\n"
-                    "    \"\" : \"value\",\n"
-                    "    \"name\" : \"\"\n"
-                    "}", value );
+            basic_istringstream< Char_t > is( in_s );
 
-        check_eq( value.get_obj(), list_of( Pair( "", "value" ) )( Pair( "name", "" ) ) );
+            const bool success = read( is, value );
 
-        check_reading( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : {\n"
-                        "        \"name 3\" : \"value 3\",\n"
-                        "        \"name_4\" : \"value_4\"\n"
-                        "    }\n"
-                        "}" );
+            assert_eq( success, true );
 
-        check_reading( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : {\n"
-                        "        \"name 3\" : \"value 3\",\n"
-                        "        \"name_4\" : \"value_4\",\n"
-                        "        \"name_5\" : {\n"
-                        "            \"name_6\" : \"value_6\",\n"
-                        "            \"name_7\" : \"value_7\"\n"
-                        "        }\n"
-                        "    }\n"
-                        "}" );
+            assert_eq( in_s, write( value ) );
+       }
 
-        check_reading( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : {\n"
-                        "        \"name 3\" : \"value 3\",\n"
-                        "        \"name_4\" : {\n"
-                        "            \"name_5\" : \"value_5\",\n"
-                        "            \"name_6\" : \"value_6\"\n"
-                        "        },\n"
-                        "        \"name_7\" : \"value_7\"\n"
-                        "    }\n"
-                        "}" );
+        void test_escape_chars( const char* json_str, const char* c_str )
+        {
+            Value_t value;
 
-        check_reading( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : {\n"
-                        "        \"name 3\" : \"value 3\",\n"
-                        "        \"name_4\" : {\n"
-                        "            \"name_5\" : \"value_5\",\n"
-                        "            \"name_6\" : \"value_6\"\n"
-                        "        },\n"
-                        "        \"name_7\" : \"value_7\"\n"
-                        "    },\n"
-                        "    \"name_8\" : \"value_8\",\n"
-                        "    \"name_9\" : {\n"
-                        "        \"name_10\" : \"value_10\"\n"
-                        "    }\n"
-                        "}" );
+            string s( string( "{\"" ) + json_str + "\" : \"" + json_str + "\"} " );
 
-        check_reading( "{\n"
-                        "    \"name 1\" : {\n"
-                        "        \"name 2\" : {\n"
-                        "            \"name 3\" : {\n"
-                        "                \"name_4\" : {\n"
-                        "                    \"name_5\" : \"value\"\n"
-                        "                }\n"
-                        "            }\n"
-                        "        }\n"
-                        "    }\n"
-                        "}" );
+            check_read( s.c_str(), value );
 
-        check_reading( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : true,\n"
-                        "    \"name 3\" : false,\n"
-                        "    \"name_4\" : \"value_4\",\n"
-                        "    \"name_5\" : true\n"
-                        "}" );
+            const Pair_t& pair( value.get_obj()[0] );
 
-        check_reading( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : null,\n"
-                        "    \"name 3\" : \"value 3\",\n"
-                        "    \"name_4\" : null\n"
-                        "}" );
+            assert_eq( pair.name_,  to_str( c_str ) );
+            assert_eq( pair.value_, to_str( c_str ) );
+        }
 
-        check_reading( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : 123,\n"
-                        "    \"name 3\" : \"value 3\",\n"
-                        "    \"name_4\" : -567\n"
-                        "}" );
+        void test_escape_chars()
+        {
+            test_escape_chars( "\\t", "\t");
+            test_escape_chars( "a\\t", "a\t" );
+            test_escape_chars( "\\tb", "\tb" );
+            test_escape_chars( "a\\tb", "a\tb" );
+            test_escape_chars( "a\\tb", "a\tb" );
+            test_escape_chars( "a123\\tb", "a123\tb" );
+            test_escape_chars( "\\t\\n\\\\", "\t\n\\" );
+            test_escape_chars( "\\/\\r\\b\\f\\\"", "/\r\b\f\"" );
+            test_escape_chars( "\\h\\j\\k", "" ); // invalid esc chars
+            test_escape_chars( "\\x61\\x62\\x63", "abc" );
+            test_escape_chars( "a\\x62c", "abc" );
+            test_escape_chars( "\\x01\\x02\\x7F", "\x01\x02\x7F" ); // NB x7F is the greatest char spirit will parse
+            test_escape_chars( "\\u0061\\u0062\\u0063", "abc" );
+        }
 
-        check_reading( "{\n"
-                        "    \"name 1\" : \"value 1\",\n"
-                        "    \"name 2\" : 1.2,\n"
-                        "    \"name 3\" : \"value 3\",\n"
-                        "    \"name_4\" : 1.234e+025,\n"
-                        "    \"name_5\" : -1.234e-123,\n"
-                        "    \"name_6\" : 1e-123\n"
-                        "}" );
+        void run_tests()
+        {
+            test_syntax();
+            test_reading();
+            test_from_stream();
+            test_escape_chars();
+        }
+    };
 
-        check_reading( "[\n]" );
+#ifndef BOOST_NO_STD_WSTRING
+    void test_wide_esc_u()
+    {
+        wValue value;
 
-        check_reading( "[\n"
-                       "    1\n"
-                       "]" );
+        const bool success = read( L"[\"\\uABCD\"]", value );
 
-        check_reading( "[\n"
-                       "    1,\n"
-                       "    1.2,\n"
-                       "    \"john\",\n"
-                       "    true,\n"
-                       "    false,\n"
-                       "    null\n"
-                       "]" );
+        assert( success );
 
-        check_reading( "[\n"
-                       "    1,\n"
-                       "    [\n"
-                       "        2,\n"
-                       "        3\n"
-                       "    ]\n"
-                       "]" );
+        const wstring s( value.get_array()[0].get_str() );
 
-        check_reading( "[\n"
-                       "    1,\n"
-                       "    [\n"
-                       "        2,\n"
-                       "        3\n"
-                       "    ],\n"
-                       "    [\n"
-                       "        4,\n"
-                       "        [\n"
-                       "            5,\n"
-                       "            6,\n"
-                       "            7\n"
-                       "        ]\n"
-                       "    ]\n"
-                       "]" );
-
-        check_reading( "[\n"
-                       "    {\n"
-                       "        \"name\" : \"value\"\n"
-                       "    }\n"
-                       "]" );
-
-        check_reading( "{\n"
-                       "    \"name\" : [\n"
-                       "        1\n"
-                       "    ]\n"
-                       "}" );
-
-        check_reading( "[\n"
-                       "    {\n"
-                       "        \"name 1\" : \"value\",\n"
-                       "        \"name 2\" : [\n"
-                       "            1,\n"
-                       "            2,\n"
-                       "            3\n"
-                       "        ]\n"
-                       "    }\n"
-                       "]" );
-
-        check_reading( "{\n"
-                       "    \"name 1\" : [\n"
-                       "        1,\n"
-                       "        {\n"
-                       "            \"name 2\" : \"value 2\"\n"
-                       "        }\n"
-                       "    ]\n"
-                       "}" );
-
-        check_reading( "[\n"
-                       "    {\n"
-                       "        \"name 1\" : \"value 1\",\n"
-                       "        \"name 2\" : [\n"
-                       "            1,\n"
-                       "            2,\n"
-                       "            {\n"
-                       "                \"name 3\" : \"value 3\"\n"
-                       "            }\n"
-                       "        ]\n"
-                       "    }\n"
-                       "]" );
-
-        check_reading( "{\n"
-                       "    \"name 1\" : [\n"
-                       "        1,\n"
-                       "        {\n"
-                       "            \"name 2\" : [\n"
-                       "                1,\n"
-                       "                2,\n"
-                       "                3\n"
-                       "            ]\n"
-                       "        }\n"
-                       "    ]\n"
-                       "}" );
+        assert_eq( s.length(), static_cast< wstring::size_type >( 1u ) );
+        assert_eq( s[0], 0xABCD );
     }
+#endif
 
-    void test_escape_chars()
+    void test_extended_ascii( const string& s )
     {
         Value value;
 
-        istringstream is( "{\n"
-                          "    \"a\\tb\" : \"c\\nd\"\n"
-                          "}" );
+        const bool success = read( "[\"" + s + "\"]", value );
 
-        check_read( is, value );
+        assert_eq( success, true );
 
-        assert_eq( value.get_obj()[0].name_, "a\tb" );
-        assert_eq( value.get_obj()[0].value_, "c\nd" );
+        assert_eq( value.get_array()[0].get_str(), "äöüß" );
+    }
+
+    void test_extended_ascii()
+    {
+        test_extended_ascii( "\\u00E4\\u00F6\\u00FC\\u00DF" );
+        test_extended_ascii( "äöüß" );
     }
 }
 
 void json_spirit::test_reader()
 {
-    test_syntax();
-    test_reading();
-    test_escape_chars();
+    Test_runner< Value >().run_tests();
+
+#ifndef BOOST_NO_STD_WSTRING
+    Test_runner< wValue >().run_tests();
+    test_wide_esc_u();
+#endif
+
+    test_extended_ascii();
 
     //Object obj;
 
     //for( int i = 0; i < 100000; ++i )
     //{
-    //    obj.push_back( Pair( "test", lexical_cast< string >( i ) ) );
+    //    obj.push_back( Pair( "\x01test\x7F", lexical_cast< string >( i ) ) );
     //}
 
-    //string s = write( obj );
+    //const string s = write( obj );
 
     //Value value;
 
