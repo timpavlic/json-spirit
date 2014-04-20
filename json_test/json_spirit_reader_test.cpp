@@ -1,7 +1,7 @@
-//          Copyright John W. Wilkinson 2007 - 2013
+//          Copyright John W. Wilkinson 2007 - 2014
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.06
+// json spirit version 4.07
 
 #include "json_spirit_reader_test.h"
 #include "utils_test.h"
@@ -325,7 +325,7 @@ namespace
 
             check_reading( "[\n"
                            "    1,\n"
-                           "    1.2000000000000000,\n"
+                           "    1.2,\n"
                            "    \"john]\",\n"
                            "    true,\n"
                            "    false,\n"
@@ -435,12 +435,12 @@ namespace
             const Array_type arr = value.get_array();
 
             assert_eq( arr.size(), 6 );
-            assert_eq( arr[0].get_real(), 1.200000000000000, 1e-16 );
+            assert_eq( arr[0].get_real(), 1.2, 1e-16 );
             assert_eq( arr[1].get_real(), 1.234567890123456e+125, 1e+110 );
-            assert_eq( arr[2].get_real(), -1.234000000000000e-123, 1e+108 );
-            assert_eq( arr[3].get_real(), 1.000000000000000e-123, 1e+108 );
+            assert_eq( arr[2].get_real(), -1.234e-123, 1e+108 );
+            assert_eq( arr[3].get_real(), 1e-123, 1e+108 );
             assert_eq( arr[4].get_real(), 1234567890.123456, 1e-7 );
-            assert_eq( arr[5].get_real(), 123.0, 1e-13 );
+            assert_eq( arr[5].get_real(), 123, 1e-13 );
         }
 
         void test_from_stream( const char* json_str, bool expected_success,

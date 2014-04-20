@@ -1,7 +1,7 @@
-//          Copyright John W. Wilkinson 2007 - 2013
+//          Copyright John W. Wilkinson 2007 - 2014
 // Distributed under the MIT License, see accompanying file LICENSE.txt
 
-// json spirit version 4.06
+// json spirit version 4.07
 
 #include "json_spirit_writer_test.h"
 #include "utils_test.h"
@@ -76,12 +76,12 @@ namespace
             assert_eq( write( value, single_line_arrays ), to_str( expected_result ) );
         }
 
-        void check_eq( const Value_type& value, const String_type& expected_result , unsigned int options )
+        void check_eq( const Value_type& value, const String_type& expected_result , Output_options options )
         {
             assert_eq( write( value, options ), expected_result );
         }
 
-        void check_eq( const Value_type& value, const char* expected_result, unsigned int options )
+        void check_eq( const Value_type& value, const char* expected_result, Output_options options )
         {
             check_eq( value, to_str( expected_result ), options );
         }
@@ -244,11 +244,11 @@ namespace
             add_value( obj, "name_3", -1234567890.123456789 );
             add_value( obj, "name_4", -1.2e-126 );
      
-            check_eq( obj, to_str( "{\"name_1\":" ) + zero_str() + to_str( ","
-                           "\"name_2\":1.2345678901234567e-108,"
-                           "\"name_3\":-1234567890.1234567,"
-                           "\"name_4\":-1.2000000000000000e-126}" ) );
-        }
+            check_eq( obj, to_str( "{\"name_1\":0,"
+                                   "\"name_2\":1.2345678901234567e-108,"
+                                   "\"name_3\":-1234567890.1234567,"
+                                   "\"name_4\":-1.2e-126}" ) );
+            }
 
         void test_objs_with_null_pairs()
         {
@@ -308,16 +308,16 @@ namespace
             arr.push_back( false );
             arr.push_back( Value_type() );
 
-            check_eq       ( arr, "[\"value_1\",123,123.45600000000000,true,false,null]" );
+            check_eq       ( arr, "[\"value_1\",123,123.456,true,false,null]" );
             check_eq_pretty( arr, "[\n"
                                   "    \"value_1\",\n"
                                   "    123,\n"
-                                  "    123.45600000000000,\n" 
+                                  "    123.456,\n"
                                   "    true,\n"
                                   "    false,\n"
                                   "    null\n"
                                   "]" );
-            check_eq_single_line_arrays( arr, "[ \"value_1\", 123, 123.45600000000000, true, false, null ]" );
+            check_eq_single_line_arrays( arr, "[ \"value_1\", 123, 123.456, true, false, null ]" );
         }
 
         void test_array_with_one_empty_child_array()
@@ -522,7 +522,7 @@ namespace
                                               "}" );
         }
 
-        void test_escape_char( const char* esc_str_in, const char* esc_str_out, unsigned int option = 0 )
+        void test_escape_char( const char* esc_str_in, const char* esc_str_out, Output_options options = none )
         {
             Object_type obj;
 
@@ -532,7 +532,7 @@ namespace
 
             const string out_str( string( "{\"" ) + esc_str_out + "name\":\"value" + esc_str_out + "\"}" );
 
-            check_eq( obj, out_str.c_str(), option );
+            check_eq( obj, out_str.c_str(), options );
         }
 
         void test_escape_chars()
@@ -575,7 +575,7 @@ namespace
         void test_values()
         {
             check_eq( 123, "123" );
-            check_eq( 1.234, "1.2340000000000000" );
+            check_eq( 1.234, "1.234" );
             check_eq( to_str( "abc" ), "\"abc\"" );
             check_eq( false, "false" );
             check_eq( Value_type::null, "null" );
@@ -615,13 +615,13 @@ namespace
             os << 0.123456789;
 
             assert_eq( os.str(), to_str( "0.123457"
-                                         "[0.12345678900000000]"
+                                         "[0.123456789]"
                                          "0.123457" ) );
         }
 
         void check_remove_trailing_zeros( const double value, const String_type& expected_str_with, const String_type& expected_str_without )
         {
-            check_eq( value, expected_str_with, 0 );
+            check_eq( value, expected_str_with, none );
             check_eq( value, expected_str_without, remove_trailing_zeros );
         }
 
@@ -637,12 +637,42 @@ namespace
 #else
             const String_type exp = to_str( "99" );
 #endif
-            check_remove_trailing_zeros( 0.0,           zero_str(),  to_str( "0.0" ) );
-            check_remove_trailing_zeros( 1.2,           "1.2000000000000000",  "1.2" );
-            check_remove_trailing_zeros( 0.123456789,   "0.12345678900000000",  "0.123456789" );
-            check_remove_trailing_zeros( 1.2e-99,       to_str( "1.2000000000000000e-" ) + exp,  to_str( "1.2e-" ) + exp );
+            check_remove_trailing_zeros( 0.0,           "0", "0" );
+            check_remove_trailing_zeros( 1.2,           "1.2", "1.2" );
+            check_remove_trailing_zeros( 0.123456789,   "0.123456789", "0.123456789" );
+            check_remove_trailing_zeros( 1.2e-99,       to_str( "1.2e-" ) + exp,  to_str( "1.2e-" ) + exp );
             check_remove_trailing_zeros( 1.23456789e99, to_str( "1.2345678900000001e+" ) + exp,  to_str( "1.23456789e+" ) + exp );
         }
+
+        void check_precision_of_doubles( unsigned int precision, const char* expected_result_1, const char* expected_result_2 = 0 )
+        {
+            Value_type val = 0.1234567890123456789;
+            assert_eq( write( val, none, precision ), to_str( expected_result_1 ) );
+            if( !expected_result_2 )
+            {
+                expected_result_2 = expected_result_1;
+            }
+            assert_eq( write( val, remove_trailing_zeros, precision ), to_str( expected_result_2 ) );
+        }
+
+        void check_precision_of_doubles( const char* expected_result_1, const char* expected_result_2 )
+        {
+            Value_type val = 0.1234567890123456789;
+            assert_eq( write( val, none ), to_str( expected_result_1 ) );
+            assert_eq( write( val, remove_trailing_zeros ), to_str( expected_result_2 ) );
+        }
+
+        void test_precision_of_doubles()
+        {
+            // default is 17, or 16 for remove_trailing_zeros flag
+            check_precision_of_doubles( "0.12345678901234568", "0.1234567890123457" );
+            check_precision_of_doubles( 0, "0.12345678901234568", "0.1234567890123457" );
+
+            // specified override is used with or without remove_trailing_zeros flag
+            check_precision_of_doubles( 9, "0.123456789" );
+            check_precision_of_doubles( 6, "0.123457" );
+            check_precision_of_doubles( 1, "0.1" );
+       }
 
         void run_tests()
         {
@@ -673,6 +703,7 @@ namespace
             test_uint64();
             test_ios_state_saved();
             test_remove_trailing_zeros();
+            test_precision_of_doubles();
         }
     };
 
